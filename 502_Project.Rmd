@@ -164,9 +164,9 @@ CI_nonpooled <-round(c(diff_mu + CL_nonpooled, diff_mu - CL_nonpooled), 2)
 ```
 The pooled sample variance of the data is `r round(p_sample_var_1, 1)` using a degree of freedom value `r dof_1`. In this case, we reject the null hypothesis because the calculated p value, `r round(p_value_obs_1, 4)`, is smaller than the chosen $\alpha$ value of 0.05. In terms of t values, our observed t value of `r round(t_obs_1, 2)` is smaller than the t value, `r round(t_stat_1, 2)` for a two sided $\alpha$ of 0.05. 
 
-When computing the observed t value using the assumption that the population variances are not equivalent (variance smoker is `r round(var_smoker, 1)` and variance nonsmoker is `r round(var_nonsmoker, 1)`), a value of `r round(t_obs_2, 1)` is obtained.  Comparing that the two sided $\alpha$ of `r round(t_stat_2, 2)` with `r dof_2` degrees of freedom (as computed using the Satterthwaite Approximation)..... 
+When computing the observed t value using the assumption that the population variances are not equivalent (variance smoker is `r round(var_smoker, 1)` and variance nonsmoker is `r round(var_nonsmoker, 1)`), a value of `r round(t_obs_2, 1)` is obtained.  Comparing that the two sided $\alpha$ of `r round(t_stat_2, 2)` with `r dof_2` degrees of freedom (as computed using the Satterthwaite Approximation see Appendix I: Equation 4). The observed t value is less than the chosen $\alpha$ value of 0.05. In case, there is sufficient evidence to reject the null hypothesis in favor of the alternative. 
 
-The observed 95% confidence intervals are `r CI_pooled[1]` to `r CI_pooled[2]` for pooled sample variance and `r CI_nonpooled[1]` to `r CI_nonpooled[2]` for non pooled sample variance. It can be seen that 0 does not fall into the 95% confidence interval in either case.
+The observed 95% confidence intervals are `r CI_pooled[1]` to `r CI_pooled[2]` for pooled sample variance and `r CI_nonpooled[1]` to `r CI_nonpooled[2]` for non pooled sample variance. It can be seen that 0 does not fall into the 95% confidence interval in either case. Therefore the null hypothesis can be rejected.
 
 In all three case, there is sufficient evidence to reject the null hypothesis and to support the alternative at an $\alpha$ level of 0.05.
 
