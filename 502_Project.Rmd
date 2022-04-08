@@ -70,6 +70,15 @@ plot_3 <- ggplot() + geom_density(data = df_smoker, aes(sysBP),
 data_kurtosis <- kurtosis(df_data$sysBP)
 data_skew <- skewness(df_data$sysBP)
 
+
+# Q - Q Plot
+
+data_qqplot <- 
+ggplot(df_data, aes(sample = sysBP)) + 
+stat_qq(shape = 1) + stat_qq_line() + 
+ggtitle("Normal Q-Q Plot for Blood Pressure Data") + 
+xlab("Theoretical Quantiles") +
+ylab("Sample Quantiles")
 ```
 
 ### Normality of Data
@@ -259,7 +268,14 @@ options(repr.plot.width = 6, repr.plot.height = 4, repr.plot.res = 150)
 plot_grid(total_data, sep_data, plot_3, align = 'vh', 
           hjust = -1,nrow = 1, ncol = 3, labels = c("A", "B", "C"))
 ```
+
 ### Figure 1: Data plots
+
+```{r, echo = FALSE, fig.dim = c(5, 3)}
+data_qqplot + theme_bw()
+```
+
+### Figure 2: Q-Q Plot
 
 ---
 
@@ -275,7 +291,9 @@ $t_{obs} = \frac{\mu_{ns} - \mu_{s}}{S_{p}\sqrt{\frac{1}{n_{ns}}+\frac{1}{n_{s}}
 $t_{obs} = \frac{\mu_{ns} - \mu_{s}}{\sqrt{\frac{S_{ns}^{2}}{n_{ns}}+\frac{S_{s}^{2}}{n_{s}}}}$
 
 ### Equation 4: Satterthwaite Approximation:
+
 $\nu = \frac{ ( \frac{S_{ns}^{2}}{n_{ns}} + \frac{S_{s}^{2}}{n_{s}})^{2} } { \frac{(S_{ns}^{2} / n_{ns})^{2} } { n_{ns} - 1 } + \frac{(S_{s}^{2} / n_{s})^{2} } { n_{s} - 1 } }$
+
 
 \newpage
 
