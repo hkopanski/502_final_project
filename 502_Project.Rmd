@@ -281,19 +281,31 @@ data_qqplot + theme_bw()
 
 ## Equations:
 
+\begingroup
+\fontsize{16}{16}\selectfont
+
 ### Equation 1: Pooled Sample Variance:
-$S_{p}^{2} = \frac{(n_{ns} - 1)S_{ns}^{2} + (n_{s} - 1)S_{s}^{2}}{n_{ns} + n_{s} - 2}$
+$$
+S_{p}^{2} = \frac{(n_{ns} - 1)S_{ns}^{2} + (n_{s} - 1)S_{s}^{2}}{n_{ns} + n_{s} - 2}
+$$
 
 ### Equation 2: Observed T Statistic (pooled variance):
-$t_{obs} = \frac{\mu_{ns} - \mu_{s}}{S_{p}\sqrt{\frac{1}{n_{ns}}+\frac{1}{n_{s}}}}$
+$$
+t_{obs} = \frac{\mu_{ns} - \mu_{s}}{S_{p}\sqrt{\frac{1}{n_{ns}}+\frac{1}{n_{s}}}}
+$$
 
 ### Equation 3: Observed T Statistic (distinct variance):
-$t_{obs} = \frac{\mu_{ns} - \mu_{s}}{\sqrt{\frac{S_{ns}^{2}}{n_{ns}}+\frac{S_{s}^{2}}{n_{s}}}}$
+$$
+t_{obs} = \frac{\mu_{ns} - \mu_{s}}{\sqrt{\frac{S_{ns}^{2}}{n_{ns}}+\frac{S_{s}^{2}}{n_{s}}}}
+$$
 
 ### Equation 4: Satterthwaite Approximation:
 
-$\nu = \frac{ ( \frac{S_{ns}^{2}}{n_{ns}} + \frac{S_{s}^{2}}{n_{s}})^{2} } { \frac{(S_{ns}^{2} / n_{ns})^{2} } { n_{ns} - 1 } + \frac{(S_{s}^{2} / n_{s})^{2} } { n_{s} - 1 } }$
-
+$$
+\nu = \frac{ \left( \frac{ S_{ns}^{2}}{n_{ns} } + \frac{ S_{s}^{2}}{n_{s} } \right)^{2} }
+           { \frac { \frac{ S_{ns}^{2}}{n_{ns}} } { n_{ns} -1 } + \frac{ \frac{ S_{s}^{2}}{n_{s}} } { n_{s} -1 } }
+$$
+\endgroup
 
 \newpage
 
