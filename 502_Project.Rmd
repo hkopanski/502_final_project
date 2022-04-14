@@ -102,9 +102,15 @@ plot_3 <- ggplot() + geom_density(data = df_smoker, aes(sysBP),
 
 data_kurtosis <- kurt_function(df_data$sysBP)
 data_skew <- skew_function(df_data$sysBP)
+data_IQR <- as.numeric(quantile(df_data$sysBP, probs = 0.75)) - 
+       as.numeric(quantile(df_data$sysBP, probs = 0.25))
+data_MAD <- median(abs(df_data$sysBP - median(df_data$sysBP)))
+data_samVar <- sample_variance(df_data$sysBP)
 
+eIQR <- data_IQR / 1.35
+eMAD <- data_MAD / 0.675
 
-# Q - Q Plot
+# Q-Q Plot
 
 data_qqplot <- 
 ggplot(df_data, aes(sample = sysBP)) + 
@@ -116,7 +122,7 @@ ylab("Sample Quantiles")
 
 ### Normality of Data
 
-Plotting the density of total data (see Appendix I: Figure 1A), we can that it closely follows a normal distribution, Density plots of the split data exhibit similar forms (see Appendix I: Figure 1B). We can also calculate the kurtosis and the skew of the data, which are `r c(round(data_kurtosis, 3), round(data_skew, 3))` for kurtosis and skew respectively, and see that they are quite close to values typically found in normally distributed data. Therefore, we will assume the data and the subsequent split data to be normal. 
+Plotting the density of total data (see Appendix I: Figure 1A), we can that it closely follows a normal distribution, Density plots of the split data exhibit similar forms (see Appendix I: Figure 1B). We can also calculate the kurtosis and the skew of the data, which are `r c(round(data_kurtosis, 3), round(data_skew, 3))` for kurtosis and skew respectively, and see that they are quite close to values typically found in normally distributed data. Additionally, the calculated values of sample standard deviation, $\frac{IQR}{1.35}$, and $\frac{MAD}{0.675}$ are `r round(sqrt(data_samVar), 2)`, `r round(eIQR, 2)`, and `r round(eMAD, 2)`. The similarities between the three values indicate that the data is not influenced by outliers. Therefore, we will assume the data and the subsequent split data to be normal. 
 
 
 ### Statistical Analysis
@@ -198,15 +204,6 @@ In all three case, there is sufficient evidence to reject the null hypothesis an
 set.seed(1)
 
 alpha <- 0.05
-
-#Create a sample variance function to ensure proper calculation
-sample_variance <- function(x, sample = TRUE){
-    if (sample == TRUE){
-        sum((x - mean(x))^2) / (length(x) - 1)
-    } else if(sample == FALSE) {
-        sum((x - mean(x))^2) / (length(x))
-    }
-}
 
 test_function <- function (x, y){
     
