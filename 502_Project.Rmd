@@ -11,6 +11,8 @@ knitr::opts_chunk$set(echo = TRUE)
 #Use required packages
 library(tidyverse) #for plots and data manipulation
 library(cowplot) #aligning plots
+library(gridExtra)
+library(scales)
 
 df_data <- read_csv("framingham_data.csv") # Read in data
 ```
@@ -37,10 +39,10 @@ df_smoker <- df_data %>% filter(currentSmoker == 1)
 df_nonsmoker <- df_data %>% filter(currentSmoker == 0)
 
 #Create a sample variance function to ensure proper calculation
-sample_variance <- function(x, sample = TRUE){
-    if (sample == TRUE){
+sample_variance <- function(x, sampling = TRUE){
+    if (sampling == TRUE){
         sum((x - mean(x))^2) / (length(x) - 1)
-    } else if(sample == FALSE) {
+    } else if(sampling == FALSE) {
         sum((x - mean(x))^2) / (length(x))
     }
 }
@@ -199,68 +201,173 @@ In all three case, there is sufficient evidence to reject the null hypothesis an
 
 ## Part II
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+options(repr.plot.width = 12, repr.plot.height = 5, repr.plot.res = 150)
+set.seed(100)
+
+null_mean <- 3
+alt_means <- c(0, 1, 2, 3, 4, 5)
+plot_list <- list()
+
+#plot_colors <- c("#072ac8","#1e96fc","#a2d6f9","#fcf300","#ffc600")
+
+for(i in 1:6){
+    
+    sim1 <- rnorm(5000, null_mean, sqrt(1))
+    sim2 <- rnorm(5000, alt_means[i], sqrt(1))
+
+    alpha1 <- qnorm(0.025, null_mean, sqrt(1)) 
+    alpha2 <- qnorm(0.975, null_mean, sqrt(1))
+
+    df_set <- tibble("H0" = sim1, "HA" = sim2)
+    
+    title_string <- sprintf("Difference in Means %i", (alt_means[i] - null_mean))
+
+    plot_list[[i]]  <-
+    ggplot(data = df_set) + geom_density(aes(H0), alpha = 0.5, fill = plot_colors[5]) + 
+                            geom_area(
+                                aes(x = stage(H0, after_scale = oob_censor(x, c(-Inf, alpha1)
+                                                                          )
+                                             )
+                                   ),
+                                stat = "density", fill = plot_colors[1]
+                                 ) +
+                            geom_area(
+                                aes(x = stage(H0, after_scale = oob_censor(x, c(alpha2, Inf)
+                                                                          )
+                                             )
+                                   ),
+                                stat = "density", fill = plot_colors[1]
+                                     ) +
+                            geom_density(aes(HA), alpha = 0.5) + 
+                            geom_area(
+                                aes(x = stage(HA, after_scale = oob_censor(x, c(alpha1, alpha2)
+                                                                          )
+                                             )
+                                   ),
+                                stat = "density", fill = plot_colors[2], alpha = 0.5
+                                     ) +
+                            xlim(-2, 8) + xlab("") + ylab("") + ggtitle(title_string)
+    
+                                }
+
+do.call(grid.arrange, plot_list)
+```
+
+As the alternate and null distribution get closer, it can be seen that $\beta$ increases (power decreases).
+
+Below, various scenarios were simluted.......
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
 #Part II
 set.seed(1)
 
 alpha <- 0.05
 
-test_function <- function (x, y){
+test_function <- function (x, y, pooled = FALSE){
+
+    mu_1 <- mean(x)
+    var_1 <- sample_variance(x, sampling = TRUE)
     
-    #Bootstrap datasets
-    sample1 <- sample(x, size = length(x), replace = TRUE)
-    sample2 <- sample(y, size = length(y), replace = TRUE)
-    
-    dof <- length(x) + length(y) - 2 #Determine degrees of freedom
-    
-    #calculate the mean and variance of the two bootstrap sets
-    mu_1 <- mean(sample1)
-    var_1 <- sample_variance(sample1, sample = TRUE)
-    
-    mu_2 <- mean(sample2)
-    var_2 <- sample_variance(sample2, sample = TRUE)
+    mu_2 <- mean(y)
+    var_2 <- sample_variance(y, sampling = TRUE)
     
     #Calculate the pooled sample variance
-    pooled_sample <- ((length(x) - 1) * var_1 + 
-                        (length(y) - 1) * var_2) / (length(x) + length(y) - 2)
+    pooled_sample <- ((length(x) - 1) * var_1 + (length(y) - 1) * var_2) / (length(x) + length(y) - 2)
     
     #calulate the observed t statistic
-    ttest <- (mu_1 - mu_2) / (sqrt(pooled_sample/length(x) + 
-                                     pooled_sample/length(y)))
+    if (pooled == TRUE){
+        
+        cal_sigma <- (sqrt(pooled_sample/length(x) + pooled_sample/length(y)))
+        
+        ttest <- (mu_1 - mu_2) / cal_sigma
+        dof <- length(x) + length(y) - 2 #Determine degrees of freedom
+        
+        } else {
+        
+        cal_sigma <- (sqrt(var_1/length(x) + var_2/length(y)))
+        
+        ttest <- (mu_1 - mu_2) / cal_sigma
+        dof <- satterth(var_1, var_2, length(x), length(y))
+    }
     
-    #Determine whether or not the null hypothesis can be 
-    #rejected (1 = rejected, 0 = not rejected)
+    #Determine whether or not the null hypothesis can be rejected (1 = rejected, 0 = not rejected)
     verdict <- !between(ttest, qt(alpha / 2, dof), qt(1 - alpha / 2, dof))
     
     #Return calculated values
-    return(c(mu_1, var_1, mu_2, var_2, ttest, verdict))
-}
-
-set.seed(1980)
-
-sim_data_results <- rep(0, 6)
-
-for (i in seq(1, 1000)){
-    #Run the boot strap a 1000 times and store the results in a matrix
-    sim_data_results <- rbind(sim_data_results, 
-                              test_function(df_nonsmoker$sysBP, 
-                                            df_smoker$sysBP))
+    return(c(mu_1, var_1, mu_2, var_2, ttest, cal_sigma, dof,verdict))
 }
 
 
-#Move data into dataframe for easier processing 
 
-df_sim_data <- data.frame(sim_data_results[2:nrow(sim_data_results),]) 
-                          
-colnames(df_sim_data) = c("Mean Smoker", "Variance Smoker", 
-                          "Mean NonSmoker", "Variance NonSmoker", 
-                          "T statistic", "Null Reject")
+mu1 <- c(0, 4, 5, 6, 10)
+var1 <- c(1, 4, 9)
+n1 <- c(10, 30, 70, 100)
 
-#Calculate the number of scenarios where the null was rejected 
-no_reject_null <- sum(df_sim_data$'Null Reject')
+mu2 <- 5
+var2 <- 1
+n2 <- c(10, 30, 70, 100)
+
+sim_test <- function(x_mu, x_var, x_n, y_mu, y_var, y_n, pooled = TRUE){
+    
+    sim_data_results <- matrix(rep(0, 8), ncol = 8)
+    
+    for (i in 1:1000){
+        
+        sim_set1 <- rnorm(x_n, x_mu, sqrt(x_var))
+        sim_set2 <- rnorm(y_n, y_mu, sqrt(y_var))
+        
+        sim_data_results <- rbind(sim_data_results, test_function(sim_set1, sim_set2, pooled))
+        
+        #print(sim_data_results)
+    }
+    
+    df_sim_data <- data.frame(sim_data_results[2 : nrow(sim_data_results),])
+    colnames(df_sim_data) = c("Null Mean", "Null Variance", "Alternate Mean", "Alternate Variance",
+                                  "T statistic", "Calculated Variance", "DoF", "Null Reject")
+    return(df_sim_data)
+}
+
+# HA: mean = 5, var = 1
+test_results_1 <- sim_test(mu1[1], var1[1], n1[1], mu2, var2, n2[1])
+test_results_2 <- sim_test(mu1[2], var1[1], n1[1], mu2, var2, n2[1])
+test_results_3 <- sim_test(mu1[3], var1[1], n1[1], mu2, var2, n2[1])
+test_results_4 <- sim_test(mu1[4], var1[1], n1[1], mu2, var2, n2[1])
+test_results_5 <- sim_test(mu1[5], var1[1], n1[1], mu2, var2, n2[1])
+
+test_results_6 <- sim_test(mu1[3], var1[1], n1[1], mu2, var2, n2[1])
+test_results_7 <- sim_test(mu1[3], var1[2], n1[1], mu2, var2, n2[1])
+test_results_8 <- sim_test(mu1[3], var1[3], n1[1], mu2, var2, n2[1])
+
+test_results_9 <- sim_test(mu1[4], var1[1], n1[1], mu2, var2, n2[1])
+test_results_10 <- sim_test(mu1[4], var1[2], n1[1], mu2, var2, n2[1])
+test_results_11 <- sim_test(mu1[4], var1[3], n1[1], mu2, var2, n2[1])
+
+test_results_12 <- sim_test(mu1[4], var1[1], n1[1], mu2, var2, n2[1])
+test_results_13 <- sim_test(mu1[4], var1[1], n1[2], mu2, var2, n2[1])
+test_results_14 <- sim_test(mu1[4], var1[1], n1[3], mu2, var2, n2[1])
+test_results_15 <- sim_test(mu1[4], var1[1], n1[4], mu2, var2, n2[1])
+
+test_results_16 <- sim_test(mu1[4], var1[1], n1[1], mu2, var2, n2[2])
+test_results_17 <- sim_test(mu1[4], var1[1], n1[2], mu2, var2, n2[2])
+test_results_18 <- sim_test(mu1[4], var1[1], n1[3], mu2, var2, n2[2])
+test_results_19 <- sim_test(mu1[4], var1[1], n1[4], mu2, var2, n2[2])
+
+test_results_20 <- sim_test(mu1[4], var1[1], n1[1], mu2, var2, n2[3])
+test_results_21 <- sim_test(mu1[4], var1[1], n1[2], mu2, var2, n2[3])
+test_results_22 <- sim_test(mu1[4], var1[1], n1[3], mu2, var2, n2[3])
+test_results_23 <- sim_test(mu1[4], var1[1], n1[4], mu2, var2, n2[3])
+
+test_results_24 <- sim_test(mu1[4], var1[1], n1[1], mu2, var2, n2[4])
+test_results_25 <- sim_test(mu1[4], var1[1], n1[2], mu2, var2, n2[4])
+test_results_26 <- sim_test(mu1[4], var1[1], n1[3], mu2, var2, n2[4])
+test_results_27 <- sim_test(mu1[4], var1[1], n1[4], mu2, var2, n2[4])
+
+test_results_28 <- sim_test(mu1[4], var1[1], n1[2], mu2, var2, n2[4])
+test_results_29 <- sim_test(mu1[4], var1[2], n1[2], mu2, var2, n2[4])
+test_results_30 <- sim_test(mu1[4], var1[3], n1[2], mu2, var2, n2[4])
 ```
 
-The number of scenarios where the null was rejected is `r no_reject_null`.
 
 \newpage
 
@@ -334,11 +441,47 @@ Nonpooled Sample Variance: `r np_sample_var_2`
 CI Pooled: `r CI_pooled`  
 CI Nonpooled: `r CI_nonpooled`
 
+\newpage
+
+## Appendix III: Part II Results
+
+|Test#|$\mu_{0}$|$\sigma_{0}$|$n_{0}$|$\mu_{a}$|$\sigma_{a}$|$n_{a}$|Test Results|
+|-|-|-|-|-|-|-|-|
+|1|0|1|10|5|1|10|`r sprintf("Test Results 1: %i", sum(test_results_1[,8]))`|
+|2|4|1|10|5|1|10|`r sprintf("Test Results 2: %i", sum(test_results_2[,8]))`|
+|3|5|1|10|5|1|10|`r sprintf("Test Results 3: %i", sum(test_results_3[,8]))`|
+|4|6|1|10|5|1|10|`r sprintf("Test Results 4: %i", sum(test_results_4[,8]))`|
+|5|10|1|10|5|1|10|`r sprintf("Test Results 5: %i", sum(test_results_5[,8]))`|
+|6|5|1|10|5|1|10|`r sprintf("Test Results 6: %i", sum(test_results_6[,8]))`|
+|7|5|1|10|5|1|10|`r sprintf("Test Results 7: %i", sum(test_results_7[,8]))`|
+|8|5|1|10|5|1|10|`r sprintf("Test Results 8: %i", sum(test_results_8[,8]))`|
+|9|6|1|10|5|1|10|`r sprintf("Test Results 9: %i", sum(test_results_9[,8]))`|
+|10|6|1|10|5|1|10|`r sprintf("Test Results 10: %i", sum(test_results_10[,8]))`|
+|11|6|1|10|5|1|10|`r sprintf("Test Results 11: %i", sum(test_results_11[,8]))`|
+|12|6|1|10|5|1|10|`r sprintf("Test Results 12: %i", sum(test_results_12[,8]))`|
+|13|6|1|30|5|1|10|`r sprintf("Test Results 13: %i", sum(test_results_13[,8]))`|
+|14|6|1|70|5|1|10|`r sprintf("Test Results 14: %i", sum(test_results_14[,8]))`|
+|15|6|1|100|5|1|10|`r sprintf("Test Results 15: %i", sum(test_results_15[,8]))`|
+|16|6|1|10|5|1|30|`r sprintf("Test Results 16: %i", sum(test_results_16[,8]))`|
+|17|6|1|30|5|1|30|`r sprintf("Test Results 17: %i", sum(test_results_17[,8]))`|
+|18|6|1|70|5|1|30|`r sprintf("Test Results 18: %i", sum(test_results_18[,8]))`|
+|19|6|1|100|5|1|30|`r sprintf("Test Results 19: %i", sum(test_results_19[,8]))`|
+|20|6|1|10|5|1|70|`r sprintf("Test Results 20: %i", sum(test_results_20[,8]))`|
+|21|6|1|30|5|1|70|`r sprintf("Test Results 21: %i", sum(test_results_21[,8]))`|
+|22|6|1|70|5|1|70|`r sprintf("Test Results 22: %i", sum(test_results_22[,8]))`|
+|23|6|1|100|5|1|70|`r sprintf("Test Results 23: %i", sum(test_results_23[,8]))`|
+|24|6|1|10|5|1|100|`r sprintf("Test Results 24: %i", sum(test_results_24[,8]))`|
+|25|6|1|30|5|1|100|`r sprintf("Test Results 25: %i", sum(test_results_25[,8]))`|
+|26|6|1|70|5|1|100|`r sprintf("Test Results 26: %i", sum(test_results_26[,8]))`|
+|27|6|1|100|5|1|100|`r sprintf("Test Results 27: %i", sum(test_results_27[,8]))`|
+|28|6|1|30|5|1|100|`r sprintf("Test Results 28: %i", sum(test_results_28[,8]))`|
+|29|6|4|30|5|1|100|`r sprintf("Test Results 29: %i", sum(test_results_29[,8]))`|
+|30|6|9|30|5|1|100|`r sprintf("Test Results 30: %i", sum(test_results_30[,8]))`|
 
 
 \newpage
 
-## Appendix III: Code
+## Appendix IV: Code
 ```{r, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
 ```
 
