@@ -23,9 +23,9 @@ df_data <- read_csv("framingham_data.csv") # Read in data
 
 The Framingham data set contains the diastolic blood pressure of `r nrow(df_data)` smokers and nonsmokers. For this study we will assume the following:
 
-H~0~: $\mu$~ns~ - $\mu$~s~ = 0
+H~0~: $\mu$~1~ - $\mu$~2~ = 0
 
-H~A~: $\mu$~ns~ - $\mu$~s~ $\ne$ 0
+H~A~: $\mu$~1~ - $\mu$~2~ $\ne$ 0
 
 The null hypothesis being there is no difference in the blood pressure between smokers and non smokers. We believe that there is a difference and this paper will prove if we have enough evidence to reject the null hypothesis.
 
@@ -68,7 +68,7 @@ kurt_function <- function(x){
 satterth <- function(s1, s2, n1, n2){
     term1 <- s1/n1
     term2 <- s2/n2
-    nu <- (term1 + term2)^2 / ((term1/(n1 - 1)) + (term2/(n2 - 1)))
+    nu <- (term1 + term2)^2 / ((term1^2/(n1 - 1)) + (term2^2/(n2 - 1)))
     return(floor(nu))
 }
 
@@ -201,17 +201,29 @@ In all three case, there is sufficient evidence to reject the null hypothesis an
 
 ## Part II
 
-```{r, echo = FALSE, message=FALSE, warning=FALSE}
+### Introduction
+
+In Part I we were able to see how hypothesis testing allowed to find enough evidence to challenge the "status quo" argument that smoking has no affect on the blood pressure of a person. What we found, through a number of robust statistical methods, that the difference in means, calculated to be `r mu_nonsmoker - mu_smoker`, was significant to not have arisen by chance. That within an $\alpha$ of 5%, we are confident that the two groups do exhibit measurable differences. In the following sections, we will explore, through simulated data, the concept of randomness in data and what steps we can take to mitigate that randomness. All simulated date will be generated using the built in rnorm() function in R. 
+
+### Power of Hypothesis Testing
+
+It is important to briefly discuss the concept of power in hypothesis testing. Power describes the probability of not committing a Type II error, which is to not reject the null hypothesis when there was in actuality enough evidence to do so. The probability of a Type II error is represented by $\beta$. Power is the complement to that probability (1 - $\beta$). The value of $\beta$ is the portion of the alternate distribution that is within the null hypothesis non rejection region limits. Below are a number of plots to help depict this concept. In each of the plots the shaded red is the null distribution and its location stays constant (mean = 3). The dark tails represent the rejection region of the null distribution. The outline distribution represents the "true" alternative distribution. Within that distribution is the shaded light blue region which is equal to $\beta$. It can be seen that as the difference between the two distributions shrinks the value of $\beta$ increases and the power shrinks. Power reaches minimum and $\beta$ reaches maximum when the two distributions are the same. 
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.dim = c(6, 4), fig.align = 'center'}
+
+#Part II
+#Introduction
+
 options(repr.plot.width = 12, repr.plot.height = 5, repr.plot.res = 150)
 set.seed(100)
 
 null_mean <- 3
-alt_means <- c(0, 1, 2, 3, 4, 5)
+alt_means <- c(0, 1, 3, 5)
 plot_list <- list()
 
 #plot_colors <- c("#072ac8","#1e96fc","#a2d6f9","#fcf300","#ffc600")
 
-for(i in 1:6){
+for(i in 1:length(alt_means)){
     
     sim1 <- rnorm(5000, null_mean, sqrt(1))
     sim2 <- rnorm(5000, alt_means[i], sqrt(1))
@@ -254,9 +266,9 @@ for(i in 1:6){
 do.call(grid.arrange, plot_list)
 ```
 
-As the alternate and null distribution get closer, it can be seen that $\beta$ increases (power decreases).
+### Simulation Study
 
-Below, various scenarios were simluted.......
+Below, various scenarios were simulated.......
 
 ```{r, echo = FALSE, message=FALSE, warning=FALSE}
 #Part II
@@ -275,7 +287,7 @@ test_function <- function (x, y, pooled = FALSE){
     #Calculate the pooled sample variance
     pooled_sample <- ((length(x) - 1) * var_1 + (length(y) - 1) * var_2) / (length(x) + length(y) - 2)
     
-    #calulate the observed t statistic
+    #calculate the observed t statistic
     if (pooled == TRUE){
         
         cal_sigma <- (sqrt(pooled_sample/length(x) + pooled_sample/length(y)))
@@ -399,24 +411,24 @@ data_qqplot + theme_bw()
 
 ### Equation 1: Pooled Sample Variance:
 $$
-S_{p}^{2} = \frac{(n_{ns} - 1)S_{ns}^{2} + (n_{s} - 1)S_{s}^{2}}{n_{ns} + n_{s} - 2}
+S_{p}^{2} = \frac{(n_{1} - 1)S_{1}^{2} + (n_{2} - 1)S_{2}^{2}}{n_{1} + n_{2} - 2}
 $$
 
 ### Equation 2: Observed T Statistic (pooled variance):
 $$
-t_{obs} = \frac{\mu_{ns} - \mu_{s}}{S_{p}\sqrt{\frac{1}{n_{ns}}+\frac{1}{n_{s}}}}
+t_{obs} = \frac{\mu_{1} - \mu_{2}}{S_{p}\sqrt{\frac{1}{n_{1}}+\frac{1}{n_{2}}}}
 $$
 
 ### Equation 3: Observed T Statistic (distinct variance):
 $$
-t_{obs} = \frac{\mu_{ns} - \mu_{s}}{\sqrt{\frac{S_{ns}^{2}}{n_{ns}}+\frac{S_{s}^{2}}{n_{s}}}}
+t_{obs} = \frac{\mu_{1} - \mu_{2}}{\sqrt{\frac{S_{1}^{2}}{n_{1}}+\frac{S_{2}^{2}}{n_{2}}}}
 $$
 
 ### Equation 4: Satterthwaite Approximation:
 
 $$
-\nu = \frac{ \left( \frac{ S_{ns}^{2}}{n_{ns} } + \frac{ S_{s}^{2}}{n_{s} } \right)^{2} }
-           { \frac { \frac{ S_{ns}^{2}}{n_{ns}} } { n_{ns} -1 } + \frac{ \frac{ S_{s}^{2}}{n_{s}} } { n_{s} -1 } }
+\nu = \frac{ \left( \frac{ S_{1}^{2}}{n_{1} } + \frac{ S_{2}^{2}}{n_{2} } \right)^{2} }
+           { \frac { \left( \frac{ S_{1}^{2}}{n_{1}} \right)^{2} } { n_{1} -1 } + \frac{ \left( \frac{ S_{2}^{2}}{n_{2}} \right)^{2} } { n_{2} -1 } }
 $$
 \endgroup
 
