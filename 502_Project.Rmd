@@ -91,16 +91,23 @@ sep_data <- ggplot() + geom_density(data = df_smoker, aes(sysBP),
                                     fill = plot_colors[5], alpha = 0.6) +
                        ylim(y_limits) + ylab("") + xlab("Systolic Blood Pressure")
 
-plot_3 <- ggplot() + geom_density(data = df_smoker, aes(sysBP), 
-                                    fill = plot_colors[3], alpha = 0.5) + 
-                       geom_density(data = df_data, aes(sysBP), 
-                                    fill = plot_colors[1], alpha = 0.5) +
-                       geom_density(data = df_nonsmoker, aes(sysBP), 
-                                    fill = plot_colors[5], alpha = 0.5) +
-                       ylim(y_limits) + ylab("") + xlab("")
+plot_3 <- ggplot() + geom_density(data = df_smoker, aes(sysBP, 
+                                    fill = plot_colors[3]), alpha = 0.5) + 
+                       geom_density(data = df_data, aes(sysBP, 
+                                    fill = plot_colors[1]), alpha = 0.5) +
+                       geom_density(data = df_nonsmoker, aes(sysBP, 
+                                    fill = plot_colors[5]), alpha = 0.5) +
+                       ylim(y_limits) + ylab("") + xlab("") + 
+                       scale_fill_manual("",
+                                         values = plot_colors[c(1, 5, 3)], 
+                                         labels = c("Total", "Non Smoker", "Smoker")) +
+                       theme(legend.position = c(0.8, 0.9),
+                             legend.text = element_text(size = 6),
+                             legend.key.height = unit(0.25, 'cm'),
+                             legend.key.width = unit(0.25, 'cm'))
 
 #plot_grid(total_data, sep_data, plot_3, align = 'vh', 
-#          hjust = -1,nrow = 1, ncol = 3)
+          #hjust = -1,nrow = 2, ncol = 2)
 
 data_kurtosis <- kurt_function(df_data$sysBP)
 data_skew <- skew_function(df_data$sysBP)
