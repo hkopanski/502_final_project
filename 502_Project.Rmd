@@ -268,7 +268,18 @@ do.call(grid.arrange, plot_list)
 
 ### Simulation Study
 
-Below, various scenarios were simulated.......
+Below, various scenarios were simulated by creating 2 normally distributed data sets of various mean, variances, and sample sizes. Each scenario was repeated a thousand times. For each of those repeats a hypothesis test was conducted and the number of times the null hypothesis was rejected was recorded. See Appendix III for results. All hypothesis testing was conducted assuming different values of variance, regardless of the actual variance values. 
+
+The following table includes the values of each parameter used in the simulation:
+
+|Parameter|Possible Values|
+|-|-|
+|$\mu_{0}$|0, 4, 5, 6, 10|
+|$\sigma_{0}^{2}$|1, 4, 9|
+|$n_{0}$|10, 30, 70, 100|
+|$\mu_{A}$|5|
+|$\sigma_{A}^{2}$|1|
+|$n_{A}$|10, 30, 70, 100|
 
 ```{r, echo = FALSE, message=FALSE, warning=FALSE}
 #Part II
@@ -378,8 +389,14 @@ test_results_27 <- sim_test(mu1[4], var1[1], n1[4], mu2, var2, n2[4])
 test_results_28 <- sim_test(mu1[4], var1[1], n1[2], mu2, var2, n2[4])
 test_results_29 <- sim_test(mu1[4], var1[2], n1[2], mu2, var2, n2[4])
 test_results_30 <- sim_test(mu1[4], var1[3], n1[2], mu2, var2, n2[4])
+test_results_31 <- sim_test(mu1[4], var1[2], n1[3], mu2, var2, n2[4])
+test_results_32 <- sim_test(mu1[4], var1[2], n1[4], mu2, var2, n2[4])
+
+test_results_33 <- sim_test(mu1[4], var1[3], n1[3], mu2, var2, n2[4])
+test_results_34 <- sim_test(mu1[4], var1[3], n1[4], mu2, var2, n2[4])
 ```
 
+It was noted that the smaller difference between the alternative and null mean values were, the less likely the null hypothesis was rejected. Larger values of variance also reduced the number of rejected null hypothesis. In both cases, the more overlap between the two distributions, the less powerful the test. One way that can increase the power of the t-test is to increase the sample size. For a specific example, we can look at test cases #12 and #27. In both cases the distribution means were 6 and 5 for the null and alternative hypotheses respectively, along with variances of 1 for both distributions. The only difference between the two cases was the sample size ($n_{12}$ = 10 and $n_{27}$ = 100). This increase in sample size resulted in almost a 2 fold increase in power (570 vs 1000 rejected nulls). It stands to reason that large variances and small deltas in mean can be mitigated by increasing the sample size accordingly. 
 
 \newpage
 
@@ -457,7 +474,7 @@ CI Nonpooled: `r CI_nonpooled`
 
 ## Appendix III: Part II Results
 
-|Test#|$\mu_{0}$|$\sigma_{0}$|$n_{0}$|$\mu_{a}$|$\sigma_{a}$|$n_{a}$|Test Results|
+|Test#|$\mu_{0}$|$\sigma_{0}^{2}$|$n_{0}$|$\mu_{a}$|$\sigma_{a}^{2}$|$n_{a}$|Test Results|
 |-|-|-|-|-|-|-|-|
 |1|0|1|10|5|1|10|`r sprintf("Test Results 1: %i", sum(test_results_1[,8]))`|
 |2|4|1|10|5|1|10|`r sprintf("Test Results 2: %i", sum(test_results_2[,8]))`|
@@ -465,11 +482,11 @@ CI Nonpooled: `r CI_nonpooled`
 |4|6|1|10|5|1|10|`r sprintf("Test Results 4: %i", sum(test_results_4[,8]))`|
 |5|10|1|10|5|1|10|`r sprintf("Test Results 5: %i", sum(test_results_5[,8]))`|
 |6|5|1|10|5|1|10|`r sprintf("Test Results 6: %i", sum(test_results_6[,8]))`|
-|7|5|1|10|5|1|10|`r sprintf("Test Results 7: %i", sum(test_results_7[,8]))`|
-|8|5|1|10|5|1|10|`r sprintf("Test Results 8: %i", sum(test_results_8[,8]))`|
+|7|5|4|10|5|1|10|`r sprintf("Test Results 7: %i", sum(test_results_7[,8]))`|
+|8|5|9|10|5|1|10|`r sprintf("Test Results 8: %i", sum(test_results_8[,8]))`|
 |9|6|1|10|5|1|10|`r sprintf("Test Results 9: %i", sum(test_results_9[,8]))`|
-|10|6|1|10|5|1|10|`r sprintf("Test Results 10: %i", sum(test_results_10[,8]))`|
-|11|6|1|10|5|1|10|`r sprintf("Test Results 11: %i", sum(test_results_11[,8]))`|
+|10|6|4|10|5|1|10|`r sprintf("Test Results 10: %i", sum(test_results_10[,8]))`|
+|11|6|9|10|5|1|10|`r sprintf("Test Results 11: %i", sum(test_results_11[,8]))`|
 |12|6|1|10|5|1|10|`r sprintf("Test Results 12: %i", sum(test_results_12[,8]))`|
 |13|6|1|30|5|1|10|`r sprintf("Test Results 13: %i", sum(test_results_13[,8]))`|
 |14|6|1|70|5|1|10|`r sprintf("Test Results 14: %i", sum(test_results_14[,8]))`|
@@ -489,6 +506,10 @@ CI Nonpooled: `r CI_nonpooled`
 |28|6|1|30|5|1|100|`r sprintf("Test Results 28: %i", sum(test_results_28[,8]))`|
 |29|6|4|30|5|1|100|`r sprintf("Test Results 29: %i", sum(test_results_29[,8]))`|
 |30|6|9|30|5|1|100|`r sprintf("Test Results 30: %i", sum(test_results_30[,8]))`|
+|31|6|4|70|5|1|100|`r sprintf("Test Results 31: %i", sum(test_results_31[,8]))`|
+|32|6|4|100|5|1|100|`r sprintf("Test Results 32: %i", sum(test_results_32[,8]))`|
+|33|6|9|70|5|1|100|`r sprintf("Test Results 33: %i", sum(test_results_33[,8]))`|
+|34|6|9|100|5|1|100|`r sprintf("Test Results 34: %i", sum(test_results_34[,8]))`|
 
 
 \newpage
