@@ -332,11 +332,11 @@ test_function <- function (x, y, pooled = FALSE){
 
 mu1 <- c(0, 4, 5, 6, 10)
 var1 <- c(1, 4, 9)
-n1 <- c(10, 30, 70, 100)
+n1 <- c(10, 30, 70)
 
 mu2 <- 5
 var2 <- 1
-n2 <- c(10, 30, 70, 100)
+n2 <- c(10, 30, 70)
 
 sim_test <- function(x_mu, x_var, x_n, y_mu, y_var, y_n, pooled = TRUE){
     
@@ -359,48 +359,18 @@ sim_test <- function(x_mu, x_var, x_n, y_mu, y_var, y_n, pooled = TRUE){
 }
 
 # HA: mean = 5, var = 1
-test_results_1 <- sim_test(mu1[1], var1[1], n1[1], mu2, var2, n2[1])
-test_results_2 <- sim_test(mu1[2], var1[1], n1[1], mu2, var2, n2[1])
-test_results_3 <- sim_test(mu1[3], var1[1], n1[1], mu2, var2, n2[1])
-test_results_4 <- sim_test(mu1[4], var1[1], n1[1], mu2, var2, n2[1])
-test_results_5 <- sim_test(mu1[5], var1[1], n1[1], mu2, var2, n2[1])
+df_combo <- data.frame(expand.grid(mu1, var1, n1, mu2, var2, n2))
+df_combo2 <- cbind(1:nrow(df_combo), df_combo, rep(0, nrow(df_combo)))
+colnames(df_combo2) <- c("Test Case", "mu1", "var1", "n1", "mu2", "var2", "n2", "Test Results")
 
-test_results_6 <- sim_test(mu1[3], var1[1], n1[1], mu2, var2, n2[1])
-test_results_7 <- sim_test(mu1[3], var1[2], n1[1], mu2, var2, n2[1])
-test_results_8 <- sim_test(mu1[3], var1[3], n1[1], mu2, var2, n2[1])
+test_results <- list()
 
-test_results_9 <- sim_test(mu1[4], var1[1], n1[1], mu2, var2, n2[1])
-test_results_10 <- sim_test(mu1[4], var1[2], n1[1], mu2, var2, n2[1])
-test_results_11 <- sim_test(mu1[4], var1[3], n1[1], mu2, var2, n2[1])
+for (i in 1:nrow(df_combo)){
+    test_results[[i]] <- do.call(sim_test, as.list(as.numeric(df_combo[i,])))
+    df_combo2[i, 8] <- sum(as.data.frame(test_results[i])[,8])
+    }
 
-test_results_12 <- sim_test(mu1[4], var1[1], n1[1], mu2, var2, n2[1])
-test_results_13 <- sim_test(mu1[4], var1[1], n1[2], mu2, var2, n2[1])
-test_results_14 <- sim_test(mu1[4], var1[1], n1[3], mu2, var2, n2[1])
-test_results_15 <- sim_test(mu1[4], var1[1], n1[4], mu2, var2, n2[1])
-
-test_results_16 <- sim_test(mu1[4], var1[1], n1[1], mu2, var2, n2[2])
-test_results_17 <- sim_test(mu1[4], var1[1], n1[2], mu2, var2, n2[2])
-test_results_18 <- sim_test(mu1[4], var1[1], n1[3], mu2, var2, n2[2])
-test_results_19 <- sim_test(mu1[4], var1[1], n1[4], mu2, var2, n2[2])
-
-test_results_20 <- sim_test(mu1[4], var1[1], n1[1], mu2, var2, n2[3])
-test_results_21 <- sim_test(mu1[4], var1[1], n1[2], mu2, var2, n2[3])
-test_results_22 <- sim_test(mu1[4], var1[1], n1[3], mu2, var2, n2[3])
-test_results_23 <- sim_test(mu1[4], var1[1], n1[4], mu2, var2, n2[3])
-
-test_results_24 <- sim_test(mu1[4], var1[1], n1[1], mu2, var2, n2[4])
-test_results_25 <- sim_test(mu1[4], var1[1], n1[2], mu2, var2, n2[4])
-test_results_26 <- sim_test(mu1[4], var1[1], n1[3], mu2, var2, n2[4])
-test_results_27 <- sim_test(mu1[4], var1[1], n1[4], mu2, var2, n2[4])
-
-test_results_28 <- sim_test(mu1[4], var1[1], n1[2], mu2, var2, n2[4])
-test_results_29 <- sim_test(mu1[4], var1[2], n1[2], mu2, var2, n2[4])
-test_results_30 <- sim_test(mu1[4], var1[3], n1[2], mu2, var2, n2[4])
-test_results_31 <- sim_test(mu1[4], var1[2], n1[3], mu2, var2, n2[4])
-test_results_32 <- sim_test(mu1[4], var1[2], n1[4], mu2, var2, n2[4])
-
-test_results_33 <- sim_test(mu1[4], var1[3], n1[3], mu2, var2, n2[4])
-test_results_34 <- sim_test(mu1[4], var1[3], n1[4], mu2, var2, n2[4])
+#df_combo2
 ```
 
 It was noted that the smaller difference between the alternative and null mean values were, the less likely the null hypothesis was rejected. Larger values of variance also reduced the number of rejected null hypothesis. In both cases, the more overlap between the two distributions, the less powerful the test. One way that can increase the power of the t-test is to increase the sample size. For a specific example, we can look at test cases #12 and #27. In both cases the distribution means were 6 and 5 for the null and alternative hypotheses respectively, along with variances of 1 for both distributions. The only difference between the two cases was the sample size ($n_{12}$ = 10 and $n_{27}$ = 100). This increase in sample size resulted in almost a 2 fold increase in power (570 vs 1000 rejected nulls). It stands to reason that large variances and small deltas in mean can be mitigated by increasing the sample size accordingly. 
@@ -458,7 +428,7 @@ $$
 
 \newpage
 
-## Appendix II: Results
+## Appendix II: Part I Results
 
 Data Mean: `r mean(df_data$sysBP)`  
 Data Sample Variance: `r sample_variance(df_data$sysBP)`  
@@ -481,43 +451,17 @@ CI Nonpooled: `r CI_nonpooled`
 
 ## Appendix III: Part II Results
 
-|Test#|$\mu_{0}$|$\sigma_{0}^{2}$|$n_{0}$|$\mu_{a}$|$\sigma_{a}^{2}$|$n_{a}$|Test Results|
-|-|-|-|-|-|-|-|-|
-|1|0|1|10|5|1|10|`r sprintf("Test Results 1: %i", sum(test_results_1[,8]))`|
-|2|4|1|10|5|1|10|`r sprintf("Test Results 2: %i", sum(test_results_2[,8]))`|
-|3|5|1|10|5|1|10|`r sprintf("Test Results 3: %i", sum(test_results_3[,8]))`|
-|4|6|1|10|5|1|10|`r sprintf("Test Results 4: %i", sum(test_results_4[,8]))`|
-|5|10|1|10|5|1|10|`r sprintf("Test Results 5: %i", sum(test_results_5[,8]))`|
-|6|5|1|10|5|1|10|`r sprintf("Test Results 6: %i", sum(test_results_6[,8]))`|
-|7|5|4|10|5|1|10|`r sprintf("Test Results 7: %i", sum(test_results_7[,8]))`|
-|8|5|9|10|5|1|10|`r sprintf("Test Results 8: %i", sum(test_results_8[,8]))`|
-|9|6|1|10|5|1|10|`r sprintf("Test Results 9: %i", sum(test_results_9[,8]))`|
-|10|6|4|10|5|1|10|`r sprintf("Test Results 10: %i", sum(test_results_10[,8]))`|
-|11|6|9|10|5|1|10|`r sprintf("Test Results 11: %i", sum(test_results_11[,8]))`|
-|12|6|1|10|5|1|10|`r sprintf("Test Results 12: %i", sum(test_results_12[,8]))`|
-|13|6|1|30|5|1|10|`r sprintf("Test Results 13: %i", sum(test_results_13[,8]))`|
-|14|6|1|70|5|1|10|`r sprintf("Test Results 14: %i", sum(test_results_14[,8]))`|
-|15|6|1|100|5|1|10|`r sprintf("Test Results 15: %i", sum(test_results_15[,8]))`|
-|16|6|1|10|5|1|30|`r sprintf("Test Results 16: %i", sum(test_results_16[,8]))`|
-|17|6|1|30|5|1|30|`r sprintf("Test Results 17: %i", sum(test_results_17[,8]))`|
-|18|6|1|70|5|1|30|`r sprintf("Test Results 18: %i", sum(test_results_18[,8]))`|
-|19|6|1|100|5|1|30|`r sprintf("Test Results 19: %i", sum(test_results_19[,8]))`|
-|20|6|1|10|5|1|70|`r sprintf("Test Results 20: %i", sum(test_results_20[,8]))`|
-|21|6|1|30|5|1|70|`r sprintf("Test Results 21: %i", sum(test_results_21[,8]))`|
-|22|6|1|70|5|1|70|`r sprintf("Test Results 22: %i", sum(test_results_22[,8]))`|
-|23|6|1|100|5|1|70|`r sprintf("Test Results 23: %i", sum(test_results_23[,8]))`|
-|24|6|1|10|5|1|100|`r sprintf("Test Results 24: %i", sum(test_results_24[,8]))`|
-|25|6|1|30|5|1|100|`r sprintf("Test Results 25: %i", sum(test_results_25[,8]))`|
-|26|6|1|70|5|1|100|`r sprintf("Test Results 26: %i", sum(test_results_26[,8]))`|
-|27|6|1|100|5|1|100|`r sprintf("Test Results 27: %i", sum(test_results_27[,8]))`|
-|28|6|1|30|5|1|100|`r sprintf("Test Results 28: %i", sum(test_results_28[,8]))`|
-|29|6|4|30|5|1|100|`r sprintf("Test Results 29: %i", sum(test_results_29[,8]))`|
-|30|6|9|30|5|1|100|`r sprintf("Test Results 30: %i", sum(test_results_30[,8]))`|
-|31|6|4|70|5|1|100|`r sprintf("Test Results 31: %i", sum(test_results_31[,8]))`|
-|32|6|4|100|5|1|100|`r sprintf("Test Results 32: %i", sum(test_results_32[,8]))`|
-|33|6|9|70|5|1|100|`r sprintf("Test Results 33: %i", sum(test_results_33[,8]))`|
-|34|6|9|100|5|1|100|`r sprintf("Test Results 34: %i", sum(test_results_34[,8]))`|
-
+```{r, echo = FALSE}
+knitr::kable(df_combo2, col.names = c("Test Case", 
+                                      "$\\mu_1$", 
+                                      "$\\sigma_1^2$", 
+                                      "$n_1$", 
+                                      "$\\mu_2$", 
+                                      "$\\sigma_2^2$", 
+                                      "$n_2$",
+                                      "Test Results"), 
+             escape = FALSE)
+```
 
 \newpage
 
