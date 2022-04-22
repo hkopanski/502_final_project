@@ -81,3 +81,4 @@ p_value_obs <- dt(t_obs, dof_1)
 # We need the Satterthwaite approximation
 
 
+rmarkdown::render("a502_Project.Rmd", output_format = "all")

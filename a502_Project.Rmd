@@ -196,6 +196,32 @@ CI_pooled <- round(c(diff_mu + CL_pooled, diff_mu - CL_pooled), 2)
 
 CI_nonpooled <-round(c(diff_mu + CL_nonpooled, diff_mu - CL_nonpooled), 2)
 
+#Power Calculation assuming delta means is the true delta
+
+cv_lo_p <- qnorm(alpha / 2, 0, sqrt(p_sample_var_1/n_smoker + 
+                                      p_sample_var_1/n_nonsmoker))
+cv_hi_p <- qnorm(1 - alpha / 2, 0, sqrt(p_sample_var_1/n_smoker + 
+                                          p_sample_var_1/n_nonsmoker))
+
+power1 <- pnorm(cv_lo_p, (mu_smoker - mu_nonsmoker), 
+                sqrt(p_sample_var_1/n_smoker + p_sample_var_1/n_nonsmoker))
+power2 <- 1 - pnorm(cv_hi_p, (mu_smoker - mu_nonsmoker), 
+                    sqrt(p_sample_var_1/n_smoker + p_sample_var_1/n_nonsmoker))
+
+power_pooled <- sum(power1, power2)
+
+cv_lo_non <- qnorm(alpha / 2, 0, 
+               (sqrt(var_nonsmoker/n_smoker + var_nonsmoker/n_nonsmoker)))
+cv_hi_non <- qnorm(1 - alpha / 2, 0, 
+               (sqrt(var_nonsmoker/n_smoker + var_nonsmoker/n_nonsmoker)))
+
+power1 <- pnorm(cv_lo_non, (mu_smoker - mu_nonsmoker), 
+                (sqrt(var_nonsmoker/n_smoker + var_nonsmoker/n_nonsmoker)))
+power2 <- 1 - pnorm(cv_hi_non, (mu_smoker - mu_nonsmoker), 
+                    (sqrt(var_nonsmoker/n_smoker + var_nonsmoker/n_nonsmoker)))
+
+power_nonpooled <- sum(power1, power2)
+
 ```
 The pooled sample variance of the data is `r round(p_sample_var_1, 1)` using a degree of freedom value `r dof_1`. In this case, we reject the null hypothesis because the calculated p value, `r round(p_value_obs_1, 4)`, is smaller than the chosen $\alpha$ value of 0.05. In terms of t values, our observed t value of `r round(t_obs_1, 2)` is smaller than the t value, `r round(t_stat_1, 2)` for a two sided $\alpha$ of 0.05. 
 
@@ -328,8 +354,17 @@ test_function <- function (x, y, pooled = FALSE){
     # can be rejected (1 = rejected, 0 = not rejected)
     verdict <- !between(ttest, qt(alpha / 2, dof), qt(1 - alpha / 2, dof))
     
+    #Power calculation assuming calculated difference in means is Ha 
+    cv_lo <- qnorm(alpha / 2, 0, cal_sigma)
+    cv_hi <- qnorm(1 - alpha / 2, 0, cal_sigma)
+    
+    power1 <- pnorm(cv_lo, (mu_1 - mu_2), cal_sigma)
+    power2 <- 1 - pnorm(cv_hi, (mu_1 - mu_2), cal_sigma)
+    
+    power <- sum(power1, power2)
+    
     #Return calculated values
-    return(c(mu_1, var_1, mu_2, var_2, ttest, cal_sigma, dof,verdict))
+    return(c(mu_1, var_1, mu_2, var_2, ttest, cal_sigma, dof, verdict, power))
 }
 
 
@@ -344,7 +379,7 @@ n2 <- c(10, 30, 70)
 
 sim_test <- function(x_mu, x_var, x_n, y_mu, y_var, y_n, pooled = TRUE){
     
-    sim_data_results <- matrix(rep(0, 8), ncol = 8)
+    sim_data_results <- matrix(rep(0, 9), ncol = 9)
     
     for (i in 1:1000){
         
@@ -360,7 +395,8 @@ sim_test <- function(x_mu, x_var, x_n, y_mu, y_var, y_n, pooled = TRUE){
     df_sim_data <- data.frame(sim_data_results[2 : nrow(sim_data_results),])
     colnames(df_sim_data) = c("Null Mean", "Null Variance", "Alternate Mean", 
                               "Alternate Variance", "T statistic", 
-                              "Calculated Variance", "DoF", "Null Reject")
+                              "Calculated Variance", "DoF", "Null Reject", 
+                              "Power")
     return(df_sim_data)
 }
 
@@ -375,8 +411,11 @@ test_results <- list()
 test_results2 <- list()
 
 for (i in 1:nrow(df_combo)){
-    test_results[[i]] <- do.call(sim_test, as.list(as.numeric(df_combo[i,])))
-    test_results2[[i]] <- do.call(sim_test, as.list(as.numeric(c(df_combo[i,], pooled = TRUE))))
+    test_results[[i]] <- do.call(sim_test, 
+                                 as.list(as.numeric(df_combo[i,])))
+    test_results2[[i]] <- do.call(sim_test, 
+                                  as.list(as.numeric(c(df_combo[i,], 
+                                                       pooled = TRUE))))
     df_combo2[i, 8] <- sum(as.data.frame(test_results[i])[,8])
     df_combo2[i, 9] <- sum(as.data.frame(test_results2[i])[,8])    
     }
@@ -385,7 +424,21 @@ df_combo2 <- df_combo2 %>% mutate(diff = mu1 - mu2)
 #df_combo2 %>%  head()
 ```
 
-It was noted that the smaller difference between the alternative and null mean values were, the less likely the null hypothesis was rejected. Larger values of variance also reduced the number of rejected null hypothesis. In both cases, the more overlap between the two distributions, the less powerful the test. One way that can increase the power of the t-test is to increase the sample size. For a specific example, we can look at test cases #10 and #129. In both cases the distribution means were 6 and 5 for the null and alternative hypotheses respectively, along with variances of 1 for both distributions. The only difference between the two cases was the sample size ($n_{10}$ = 10 and $n_{129}$ = 70). This increase in sample size resulted in almost a 6 fold increase in power (169 vs 958 rejected nulls). Test cases 69 and 114 use different combinations of, but lower than 70, sample sizes than the aforementioned two. While they exhibited increased signs of power, they did not get as high as test case 129. It stands to reason that large variances and small deltas in mean can be mitigated by increasing the sample size accordingly. 
+It was noted that the smaller difference between the alternative and null mean values were, the less likely the null hypothesis was rejected. Larger values of variance also reduced the number of rejected null hypothesis. In both cases, the more overlap between the two distributions, the less powerful the test. One way that can increase the power of the t-test is to increase the sample size. For a specific example, we can look at test cases #9 and #129. In both cases the distribution means were 6 and 5 for the null and alternative hypotheses respectively, along with the respective variances of 4 and 1. The only difference between the two cases was the sample size ($n_{9}$ = 10 and $n_{129}$ = 70). This increase in sample size resulted in almost an 4 fold increase in power (286/952 (pooled) or 265/948 (unpooled) rejected nulls). Test cases 69 and 114 use different combinations of, but lower than 70, sample sizes than the aforementioned two. While they exhibited increased signs of power, they did not get as high as test case 129. It stands to reason that large variances and small deltas in mean can be mitigated by increasing the sample size accordingly. 
+
+
+Below are summaries of (1 - $\beta$) calculations for test cases #9 and #129:
+
+```{r, echo = FALSE}
+
+knitr::kable(summary(test_results[[9]]["Power"]))
+
+knitr::kable(summary(test_results[[129]]["Power"]))
+
+```
+
+
+The pattern further.......
 
 \newpage
 
