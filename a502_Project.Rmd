@@ -3,8 +3,8 @@ title: "ST502 Project"
 author: "Halid Kopanski and Justin Feathers"
 #geometry: "left = 1.5 cm, right = 1.5 cm, top = 1.25 cm, bottom = 2 cm"
 output: 
-    pdf_document: default
     word_document: default
+    pdf_document: default
 ---
 \newpage
 ```{r setup, include=FALSE}
