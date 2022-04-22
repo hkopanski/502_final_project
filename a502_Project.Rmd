@@ -377,7 +377,7 @@ mu2 <- 5
 var2 <- 1
 n2 <- c(10, 30, 70)
 
-sim_test <- function(x_mu, x_var, x_n, y_mu, y_var, y_n, pooled = TRUE){
+sim_test <- function(x_mu, x_var, x_n, y_mu, y_var, y_n, pooled){
     
     sim_data_results <- matrix(rep(0, 9), ncol = 9)
     
@@ -412,7 +412,8 @@ test_results2 <- list()
 
 for (i in 1:nrow(df_combo)){
     test_results[[i]] <- do.call(sim_test, 
-                                 as.list(as.numeric(df_combo[i,])))
+                                 as.list(as.numeric(c(df_combo[i,],
+                                                    pooled = FALSE))))
     test_results2[[i]] <- do.call(sim_test, 
                                   as.list(as.numeric(c(df_combo[i,], 
                                                        pooled = TRUE))))
