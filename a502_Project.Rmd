@@ -2,9 +2,9 @@
 title: "ST502 Project"
 author: "Halid Kopanski and Justin Feathers"
 #geometry: "left = 1.5 cm, right = 1.5 cm, top = 1.25 cm, bottom = 2 cm"
-output: 
-    word_document: default
+output:
     pdf_document: default
+    word_document: default
 ---
 \newpage
 ```{r setup, include=FALSE}
@@ -277,7 +277,7 @@ do.call(grid.arrange, plot_list)
 
 ### Simulation Study
 
-Below, various scenarios were simulated by creating 2 normally distributed data sets of various mean, variances, and sample sizes. Each scenario was repeated a thousand times. For each of those repeats a hypothesis test was conducted and the number of times the null hypothesis was rejected was recorded. See Appendix III for results. All hypothesis testing was conducted assuming different values of variance, regardless of the actual variance values. 
+Below, various scenarios were simulated by creating 2 normally distributed data sets of various mean, variances, and sample sizes. Each scenario was repeated a thousand times. For each of those repeats a hypothesis test was conducted and the number of times the null hypothesis was rejected was recorded. See Appendix III for results. All hypothesis testing was using pooled and unpooled variance, regardless of the actual values of variance. 
 
 The following table includes the values of each parameter used in the simulation:
 
@@ -305,7 +305,8 @@ test_function <- function (x, y, pooled = FALSE){
     var_2 <- sample_variance(y, sampling = TRUE)
     
     #Calculate the pooled sample variance
-    pooled_sample <- ((length(x) - 1) * var_1 + (length(y) - 1) * var_2) / (length(x) + length(y) - 2)
+    pooled_sample <- ((length(x) - 1) * var_1 + 
+                          (length(y) - 1) * var_2) / (length(x) + length(y) - 2)
     
     #calculate the observed t statistic
     if (pooled == TRUE){
@@ -323,7 +324,8 @@ test_function <- function (x, y, pooled = FALSE){
         dof <- satterth(var_1, var_2, length(x), length(y))
     }
     
-    #Determine whether or not the null hypothesis can be rejected (1 = rejected, 0 = not rejected)
+    # Determine whether or not the null hypothesis 
+    # can be rejected (1 = rejected, 0 = not rejected)
     verdict <- !between(ttest, qt(alpha / 2, dof), qt(1 - alpha / 2, dof))
     
     #Return calculated values
@@ -349,30 +351,38 @@ sim_test <- function(x_mu, x_var, x_n, y_mu, y_var, y_n, pooled = TRUE){
         sim_set1 <- rnorm(x_n, x_mu, sqrt(x_var))
         sim_set2 <- rnorm(y_n, y_mu, sqrt(y_var))
         
-        sim_data_results <- rbind(sim_data_results, test_function(sim_set1, sim_set2, pooled))
+        sim_data_results <- rbind(sim_data_results, 
+                                  test_function(sim_set1, sim_set2, pooled))
         
         #print(sim_data_results)
     }
     
     df_sim_data <- data.frame(sim_data_results[2 : nrow(sim_data_results),])
-    colnames(df_sim_data) = c("Null Mean", "Null Variance", "Alternate Mean", "Alternate Variance",
-                                  "T statistic", "Calculated Variance", "DoF", "Null Reject")
+    colnames(df_sim_data) = c("Null Mean", "Null Variance", "Alternate Mean", 
+                              "Alternate Variance", "T statistic", 
+                              "Calculated Variance", "DoF", "Null Reject")
     return(df_sim_data)
 }
 
 # HA: mean = 5, var = 1
-df_combo <- data.frame(expand.grid(mu1, var1, n1, mu2, var2, n2))
-df_combo2 <- cbind(1:nrow(df_combo), df_combo, rep(0, nrow(df_combo)))
-colnames(df_combo2) <- c("Test Case", "mu1", "var1", "n1", "mu2", "var2", "n2", "Test Results")
+df_combo <- expand.grid(mu1, var1, n1, mu2, var2, n2)
+df_combo2 <- tibble(cbind(1:nrow(df_combo), df_combo, 
+                          matrix(rep(0, 2 * nrow(df_combo)), ncol = 2)))
+colnames(df_combo2) <- c("Test_Case", "mu1", "var1", "n1", "mu2", "var2", 
+                         "n2", "Test_Results_up", "Test_Results_po")
 
 test_results <- list()
+test_results2 <- list()
 
 for (i in 1:nrow(df_combo)){
     test_results[[i]] <- do.call(sim_test, as.list(as.numeric(df_combo[i,])))
+    test_results2[[i]] <- do.call(sim_test, as.list(as.numeric(c(df_combo[i,], pooled = TRUE))))
     df_combo2[i, 8] <- sum(as.data.frame(test_results[i])[,8])
+    df_combo2[i, 9] <- sum(as.data.frame(test_results2[i])[,8])    
     }
 
-#df_combo2
+df_combo2 <- df_combo2 %>% mutate(diff = mu1 - mu2)
+#df_combo2 %>%  head()
 ```
 
 It was noted that the smaller difference between the alternative and null mean values were, the less likely the null hypothesis was rejected. Larger values of variance also reduced the number of rejected null hypothesis. In both cases, the more overlap between the two distributions, the less powerful the test. One way that can increase the power of the t-test is to increase the sample size. For a specific example, we can look at test cases #10 and #129. In both cases the distribution means were 6 and 5 for the null and alternative hypotheses respectively, along with variances of 1 for both distributions. The only difference between the two cases was the sample size ($n_{10}$ = 10 and $n_{129}$ = 70). This increase in sample size resulted in almost a 6 fold increase in power (169 vs 958 rejected nulls). Test cases 69 and 114 use different combinations of, but lower than 70, sample sizes than the aforementioned two. While they exhibited increased signs of power, they did not get as high as test case 129. It stands to reason that large variances and small deltas in mean can be mitigated by increasing the sample size accordingly. 
@@ -461,7 +471,9 @@ knitr::kable(df_combo2, col.names = c("Test Case",
                                       "$\\mu_2$", 
                                       "$\\sigma_2^2$", 
                                       "$n_2$",
-                                      "Test Results"), 
+                                      "Test Results Unpooled",
+                                      "Test Results Pooled",
+                                      "Difference in Mean"), 
              escape = FALSE)
 ```
 
