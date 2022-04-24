@@ -431,6 +431,40 @@ for (i in 1:nrow(df_combo)){
 
 df_combo2 <- df_combo2 %>% mutate(diff = mu1 - mu2)
 #df_combo2 %>%  head()
+
+# Some summary statitics to look for relationships in the attributes
+av_med_stats_by_diff <- 
+    df_combo2 %>% group_by(diff) %>% summarise(avg_up = mean(Test_Results_up), 
+                                               med_up = median(Test_Results_up), 
+                                               avg_po = mean(Test_Results_po), 
+                                               med_po = median(Test_Results_po))
+
+
+av_med_stats_by_var <- 
+    df_combo2 %>% group_by(var1) %>% summarise(avg_up = mean(Test_Results_up), 
+                                               med_up = median(Test_Results_up), 
+                                               avg_po = mean(Test_Results_po), 
+                                               med_po = median(Test_Results_po))
+
+av_med_stats_by_nulln <- 
+    df_combo2 %>% group_by(n1) %>% summarise(avg_up = mean(Test_Results_up), 
+                                             med_up = median(Test_Results_up), 
+                                             avg_po = mean(Test_Results_po), 
+                                             med_po = median(Test_Results_po))
+
+av_med_stats_by_altn <- 
+    df_combo2 %>% group_by(n2) %>% summarise(avg_up = mean(Test_Results_up), 
+                                             med_up = median(Test_Results_up), 
+                                             avg_po = mean(Test_Results_po), 
+                                             med_po = median(Test_Results_po))
+
+av_med_stats_by_comn <- 
+    df_combo2 %>% mutate(comn = n1 + n2) %>% group_by(comn) %>% 
+    summarise(avg_up = mean(Test_Results_up), 
+              med_up = median(Test_Results_up), 
+              avg_po = mean(Test_Results_po), 
+              med_po = median(Test_Results_po))
+
 ```
 
 It was noted that the smaller difference between the alternative and null mean values were, the less likely the null hypothesis was rejected. Larger values of variance also reduced the number of rejected null hypothesis. In both cases, the more overlap between the two distributions, the less powerful the test. One way that can increase the power of the t-test is to increase the sample size. For a specific example, we can look at test cases #9 and #129. In both cases the distribution means were 6 and 5 for the null and alternative hypotheses respectively, along with the respective variances of 4 and 1. The only difference between the two cases was the sample size ($n_{9}$ = 10 and $n_{129}$ = 70). This increase in sample size resulted in almost an 4 fold increase in power (286/952 (pooled) or 265/948 (unpooled) rejected nulls). Test cases 69 and 114 use different combinations of, but lower than 70, sample sizes than the aforementioned two. While they exhibited increased signs of power, they did not get as high as test case 129. It stands to reason that large variances and small deltas in mean can be mitigated by increasing the sample size accordingly. 
@@ -454,6 +488,26 @@ knitr::kable(d)
 
 
 The pattern further.......
+
+
+```{r, echo = FALSE, fig.dim = c(5, 2) , fig.align = 'center'}
+av_med_stats_by_diff %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
+                         ggplot() + geom_line(aes(x = diff, y = calc, color = stat)) + 
+                                    geom_point(aes(x = diff, y = calc, color = stat)) + 
+                                    xlab("Difference in Means") +
+                                    ylab("Null Reject Statistics") + 
+                                    ggtitle("Affect of" ~ Delta ~ "Means on Test Sensitivity") +
+                                    scale_color_discrete(name = "Attribute Stat",
+                                                         labels = c("Pooled/Mean", 
+                                                                    "Unpooled/Mean", 
+                                                                    "Pooled/Median", 
+                                                                    "Unpooled/Median")) +
+                                    theme(legend.position = c(0.85, 0.3),
+                                          title = element_text(size = 8),
+                                          legend.text = element_text(size = 6),
+                                          legend.key.height = unit(0.25, 'cm'),
+                                          legend.key.width = unit(0.25, 'cm'))
+```
 
 \newpage
 
@@ -534,6 +588,8 @@ d1 %>% knitr::kable(col.names = c("Attribute Value"))
 
 ## Appendix III: Part II Results
 
+### Simulation Data
+
 ```{r, echo = FALSE}
 knitr::kable(df_combo2, col.names = c("Test Case", 
                                       "$\\mu_1$", 
@@ -546,6 +602,135 @@ knitr::kable(df_combo2, col.names = c("Test Case",
                                       "Test Results Pooled",
                                       "Difference in Mean"), 
              escape = FALSE)
+```
+
+\newpage
+
+### Summary of Simulation Data
+
+```{r, echo = FALSE, fig.dim = c(7, 3)}
+av_med_stats_by_diff %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
+                         ggplot() + geom_line(aes(x = diff, y = calc, color = stat)) + 
+                                    geom_point(aes(x = diff, y = calc, color = stat)) + 
+                                    xlab("Difference in Means") +
+                                    ylab("Null Reject Statistics") + 
+                                    ggtitle("Affect of" ~ Delta ~ "Means on Test Sensitivity") +
+                                    scale_color_discrete(name = "Attribute Stat",
+                                                         labels = c("Pooled/Mean", 
+                                                                    "Unpooled/Mean", 
+                                                                    "Pooled/Median", 
+                                                                    "Unpooled/Median")
+                                                         ) +
+                                    theme(#legend.position = c(0.85, 0.3),
+                                          legend.text = element_text(size = 8),
+                                          legend.key.height = unit(0.25, 'cm'),
+                                          legend.key.width = unit(0.4, 'cm'))
+
+knitr::kable(av_med_stats_by_diff, col.names = c("$\\Delta$ Means",
+                                                 "Average # Rejects (Unpooled)",
+                                                 "Median # Rejects (Unpooled)",
+                                                 "Average # Rejects (Pooled)",
+                                                 "Median # Rejects (Pooled)"), 
+             escape = FALSE)
+
+av_med_stats_by_var %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
+                         ggplot() + geom_line(aes(x = var1, y = calc, color = stat)) + 
+                                    geom_point(aes(x = var1, y = calc, color = stat)) + 
+                                    xlab("Sample Variance") +
+                                    ylab("Null Reject Statistics") + 
+                                    ggtitle("Affect of Variance on Test Sensitivity") +
+                                    theme(#legend.position = c(0.85, 0.8),
+                                          legend.text = element_text(size = 8),
+                                          legend.key.height = unit(0.25, 'cm'),
+                                          legend.key.width = unit(0.4, 'cm')) +
+                                    scale_color_discrete(name = "Attribute Stat",
+                                                         labels = c("Pooled/Mean", 
+                                                                    "Unpooled/Mean", 
+                                                                    "Pooled/Median", 
+                                                                    "Unpooled/Median")
+                                                         )
+
+knitr::kable(av_med_stats_by_var, col.names = c("Sample Variance",
+                                                 "Average # Rejects (Unpooled)",
+                                                 "Median # Rejects (Unpooled)",
+                                                 "Average # Rejects (Pooled)",
+                                                 "Median # Rejects (Pooled)"), 
+             escape = FALSE)
+
+
+av_med_stats_by_nulln %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
+                          ggplot() + geom_line(aes(x = n1, y = calc, color = stat)) + 
+                                     geom_point(aes(x = n1, y = calc, color = stat)) + 
+                                     xlab("Null Sample Size") +
+                                     ylab("Null Reject Statistics") +
+                                     ggtitle("Affect of Null Sample Size on Test Sensitivity") +
+                                     theme(#legend.position = c(0.85, 0.65),
+                                           legend.text = element_text(size = 8),
+                                           legend.key.height = unit(0.25, 'cm'),
+                                           legend.key.width = unit(0.4, 'cm')) +
+                                     scale_color_discrete(name = "Attribute Stat",
+                                                         labels = c("Pooled/Mean", 
+                                                                    "Unpooled/Mean", 
+                                                                    "Pooled/Median", 
+                                                                    "Unpooled/Median"))
+
+
+
+knitr::kable(av_med_stats_by_nulln, col.names = c("Null Sample Size",
+                                                 "Average # Rejects (Unpooled)",
+                                                 "Median # Rejects (Unpooled)",
+                                                 "Average # Rejects (Pooled)",
+                                                 "Median # Rejects (Pooled)"), 
+             escape = FALSE)
+
+
+av_med_stats_by_altn %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
+                          ggplot() + geom_line(aes(x = n2, y = calc, color = stat)) + 
+                                     geom_point(aes(x = n2, y = calc, color = stat)) + 
+                                     xlab("Alternative Sample Size") +
+                                     ylab("Null Reject Statistics") + 
+                                     ggtitle("Affect of Alternative Sample Size on Test Sensitivity") +
+                                     theme(#legend.position = c(0.85, 0.65),
+                                           legend.text = element_text(size = 8),
+                                           legend.key.height = unit(0.25, 'cm'),
+                                           legend.key.width = unit(0.4, 'cm')) +
+                                     scale_color_discrete(name = "Attribute Stat",
+                                                         labels = c("Pooled/Mean", 
+                                                                    "Unpooled/Mean", 
+                                                                    "Pooled/Median", 
+                                                                    "Unpooled/Median"))
+
+
+knitr::kable(av_med_stats_by_altn, col.names = c("Alternative Sample Size",
+                                                 "Average # Rejects (Unpooled)",
+                                                 "Median # Rejects (Unpooled)",
+                                                 "Average # Rejects (Pooled)",
+                                                 "Median # Rejects (Pooled)"), 
+             escape = FALSE)
+
+av_med_stats_by_comn %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
+                          ggplot() + geom_line(aes(x = comn, y = calc, color = stat)) + 
+                                     geom_point(aes(x = comn, y = calc, color = stat)) + 
+                                     xlab("Total Sample Size") +
+                                     ylab("Null Reject Statistics") + 
+                                     ggtitle("Affect of Total Sample Size on Test Sensitivity") +
+                                     theme(#legend.position = c(0.85, 0.7),
+                                           legend.text = element_text(size = 8),
+                                           legend.key.height = unit(0.25, 'cm'),
+                                           legend.key.width = unit(0.4, 'cm')) +
+                                     scale_color_discrete(name = "Attribute Stat",
+                                                         labels = c("Pooled/Mean", 
+                                                                    "Unpooled/Mean", 
+                                                                    "Pooled/Median", 
+                                                                    "Unpooled/Median"))
+
+knitr::kable(av_med_stats_by_comn, col.names = c("Combined Sample Size",
+                                                 "Average # Rejects (Unpooled)",
+                                                 "Median # Rejects (Unpooled)",
+                                                 "Average # Rejects (Pooled)",
+                                                 "Median # Rejects (Pooled)"), 
+             escape = FALSE)
+
 ```
 
 \newpage
