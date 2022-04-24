@@ -1,7 +1,7 @@
 ---
 title: "ST502 Project"
 author: "Halid Kopanski and Justin Feathers"
-#geometry: "left = 1.5 cm, right = 1.5 cm, top = 1.25 cm, bottom = 2 cm"
+geometry: "left = 1.5 cm, right = 1.5 cm, top = 1.25 cm, bottom = 2 cm"
 output:
     pdf_document: default
     word_document: default
@@ -160,9 +160,9 @@ dof_1 <- (n_smoker + n_nonsmoker - 2)
 
 p_sample_var_1 <- f_pooled_variance(df_smoker$sysBP, 
                                     df_nonsmoker$sysBP)
+p_sample_var_w <- sqrt(p_sample_var_1/n_smoker + p_sample_var_1/n_nonsmoker)
 
-
-t_obs_1 <- (mu_smoker - mu_nonsmoker) / (sqrt(p_sample_var_1) * sqrt(1/n_smoker + 1/n_nonsmoker))
+t_obs_1 <- (mu_smoker - mu_nonsmoker) / (p_sample_var_w )
 
 t_stat_1 <- qt(alpha / 2, dof_1)
 
@@ -186,7 +186,7 @@ diff_mu <- mu_smoker - mu_nonsmoker
 
 #Pooled Sample variance
 
-CL_pooled <- t_stat_1 * (sqrt(p_sample_var_1/n_smoker + p_sample_var_1/n_nonsmoker))
+CL_pooled <- t_stat_1 * p_sample_var_w 
 
 #Non pooled Sample variance
 
@@ -251,16 +251,16 @@ In Part I we were able to see how hypothesis testing allowed to find enough evid
 
 It is important to briefly discuss the concept of power in hypothesis testing. Power describes the probability of not committing a Type II error, which is to not reject the null hypothesis when there was in actuality enough evidence to do so. The probability of a Type II error is represented by $\beta$. Power is the complement to that probability (1 - $\beta$). The value of $\beta$ is the portion of the alternate distribution that is within the null hypothesis non rejection region limits. Below are a number of plots to help depict this concept. In each of the plots the shaded red is the null distribution and its location stays constant (mean = 3). The dark tails represent the rejection region of the null distribution. The outline distribution represents the "true" alternative distribution. Within that distribution is the shaded light blue region which is equal to $\beta$. It can be seen that as the difference between the two distributions shrinks the value of $\beta$ increases and the power shrinks. Power reaches minimum and $\beta$ reaches maximum when the two distributions are the same. 
 
-```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.dim = c(6, 4), fig.align = 'center'}
+```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.dim = c(6, 2) ,fig.align = 'center'}
 
 #Part II
 #Introduction
 
-options(repr.plot.width = 12, repr.plot.height = 5, repr.plot.res = 150)
+#options(repr.plot.width = 12, repr.plot.height = 3, repr.plot.res = 150)
 set.seed(100)
 
 null_mean <- 3
-alt_means <- c(0, 1, 3, 5)
+alt_means <- c(0, 3, 5)
 plot_list <- list()
 
 #plot_colors <- c("#072ac8","#1e96fc","#a2d6f9","#fcf300","#ffc600")
@@ -301,11 +301,12 @@ for(i in 1:length(alt_means)){
                                    ),
                                 stat = "density", fill = plot_colors[2], alpha = 0.5
                                      ) +
-                            xlim(-2, 8) + xlab("") + ylab("") + ggtitle(title_string)
+                            xlim(-2, 8) + xlab("") + ylab("") + ggtitle(title_string) +
+                            theme(text = element_text(size = 8))
     
                                 }
 
-do.call(grid.arrange, plot_list)
+do.call(grid.arrange, c(plot_list, ncol = 3, heights = 0.5))
 ```
 
 ### Simulation Study
@@ -509,22 +510,25 @@ $$
 
 ## Appendix II: Part I Results
 
-Data Mean: `r mean(df_data$sysBP)`  
-Data Sample Variance: `r sample_variance(df_data$sysBP)`  
+```{r, echo = FALSE}
+d1 <- matrix(c(mean(df_data$sysBP), sample_variance(df_data$sysBP), 
+              mu_smoker, var_smoker,
+              mu_nonsmoker, var_nonsmoker, 
+              diff_mu, p_sample_var_1, p_sample_var_w, 
+              np_sample_var_2, CI_pooled, CI_nonpooled), ncol = 1)
 
-Smoker Mean: `r mu_smoker`  
-Smoker Variance: `r var_smoker`  
 
-Nonsmoker Mean: `r mu_nonsmoker`  
-Nonsmoker Variance: `r var_nonsmoker`  
+rownames(d1) <- c("Data Mean", "Data Sample Variance", "Smoker Mean", 
+                 "Smoker Variance", 
+                 "Nonsmoker Mean", "Nonsmoker Variance", 
+                 "Difference in Mean", "Pooled Sample Varance", 
+                 "Weighted Pooled Sample Root Variance", 
+                 "Weighted Nonpooled Sample Root Variance",
+                 "CI Pooled Lower", "CI Pooled Upper",
+                 "CI Nonpooled Lower", "CI Nonpooled Upper")
 
-Difference in mean: `r diff_mu`  
-
-Pooled Sample Variance: `r p_sample_var_1`  
-Nonpooled Sample Variance: `r np_sample_var_2`
-
-CI Pooled: `r CI_pooled`  
-CI Nonpooled: `r CI_nonpooled`
+d1 %>% knitr::kable(col.names = c("Attribute Value"))
+```
 
 \newpage
 
