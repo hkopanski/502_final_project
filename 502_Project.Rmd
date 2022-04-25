@@ -1,8 +1,8 @@
 ---
 title: "ST502 Project"
 author: "Halid Kopanski and Justin Feathers"
-#geometry: "left = 1.5 cm, right = 1.5 cm, top = 1.25 cm, bottom = 2 cm"
-output: 
+geometry: "left = 1.5 cm, right = 1.5 cm, top = 1.25 cm, bottom = 2 cm"
+output:
     pdf_document: default
     word_document: default
 ---
@@ -23,13 +23,12 @@ df_data <- read_csv("framingham_data.csv") # Read in data
 
 ### Framingham Heart Study
 
-The Framingham data set contains the diastolic blood pressure of `r nrow(df_data)` smokers and nonsmokers. For this study we will assume the following:
+The Framingham data set contains the systolic blood pressure of `r nrow(df_data)` smokers and nonsmokers. For this study we will assume the following:
 
-H~0~: $\mu$~1~ - $\mu$~2~ = 0
-
+H~0~: $\mu$~1~ - $\mu$~2~ = 0  
 H~A~: $\mu$~1~ - $\mu$~2~ $\ne$ 0
 
-The null hypothesis being there is no difference in the blood pressure between smokers and non smokers. We believe that there is a difference and this paper will prove if we have enough evidence to reject the null hypothesis.
+The null hypothesis being there is no difference in the blood pressure between smokers and non smokers. The goal of this paper is to investigate, through hypothesis testing, whether or not there is enough evidence to reject the null hypothesis. 
 
 ```{r, echo = FALSE, fig.dim = c(7, 2.5), fig.align = 'center'}
 df_data$index <- seq(nrow(df_data)) # Add an index column
@@ -133,12 +132,12 @@ ylab("Sample Quantiles")
 
 ### Normality of Data
 
-Plotting the density of total data (see Appendix I: Figure 1A), we can that it closely follows a normal distribution, Density plots of the split data exhibit similar forms (see Appendix I: Figure 1B). We can also calculate the kurtosis and the skew of the data, which are `r c(round(data_kurtosis, 3), round(data_skew, 3))` for kurtosis and skew respectively, and see that they are quite close to values typically found in normally distributed data. Additionally, the calculated values of sample standard deviation, $\frac{IQR}{1.35}$, and $\frac{MAD}{0.675}$ are `r round(sqrt(data_samVar), 2)`, `r round(eIQR, 2)`, and `r round(eMAD, 2)`. The similarities between the three values indicate that the data is not influenced by outliers. Therefore, we will assume the data and the subsequent split data to be normal. 
+Plotting the density of total data (see Appendix I: Figure 1A), we can see that it closely follows a normal distribution. Density plots of the split data exhibit similar forms (see Appendix I: Figure 1B). We calculated the kurtosis and the skew of the data and found them to `r c(round(data_kurtosis, 3), round(data_skew, 3))` for kurtosis and skew respectively. These values are quite close to those typically found in normally distributed data. Additionally, the calculated values of sample standard deviation, $\frac{IQR^{*}}{1.35}$, and $\frac{MAD^{*}}{0.675}$ are `r round(sqrt(data_samVar), 2)`, `r round(eIQR, 2)`, and `r round(eMAD, 2)`. The similarities between the three values indicate that the data is heavily influenced by outliers. Therefore, we will assume the data and the subsequent split data to be normal. 
 
 
 ### Statistical Analysis
 
-In the first analysis we will be assuming equal variances, thereby allowing us to use pooled sample variance (see Appendix I: Equation 1).
+We will conduct the analysis under two conditions; the first assuming equal population variance (using pooled sample variance, $S_{p}$) and the second assuming unequal population variance. The results will be presented and any discrepancies between the two outcomes will be discussed.  
 
 ```{r, echo = FALSE}
 
@@ -160,9 +159,9 @@ dof_1 <- (n_smoker + n_nonsmoker - 2)
 
 p_sample_var_1 <- f_pooled_variance(df_smoker$sysBP, 
                                     df_nonsmoker$sysBP)
+p_sample_var_w <- sqrt(p_sample_var_1/n_smoker + p_sample_var_1/n_nonsmoker)
 
-
-t_obs_1 <- (mu_smoker - mu_nonsmoker) / (sqrt(p_sample_var_1) * sqrt(1/n_smoker + 1/n_nonsmoker))
+t_obs_1 <- (mu_smoker - mu_nonsmoker) / (p_sample_var_w )
 
 t_stat_1 <- qt(alpha / 2, dof_1)
 
@@ -186,7 +185,7 @@ diff_mu <- mu_smoker - mu_nonsmoker
 
 #Pooled Sample variance
 
-CL_pooled <- t_stat_1 * (sqrt(p_sample_var_1/n_smoker + p_sample_var_1/n_nonsmoker))
+CL_pooled <- t_stat_1 * p_sample_var_w 
 
 #Non pooled Sample variance
 
@@ -196,14 +195,48 @@ CI_pooled <- round(c(diff_mu + CL_pooled, diff_mu - CL_pooled), 2)
 
 CI_nonpooled <-round(c(diff_mu + CL_nonpooled, diff_mu - CL_nonpooled), 2)
 
+#Power Calculation assuming delta means is the true delta
+
+cv_lo_p <- qnorm(alpha / 2, 0, sqrt(p_sample_var_1/n_smoker + 
+                                      p_sample_var_1/n_nonsmoker))
+cv_hi_p <- qnorm(1 - alpha / 2, 0, sqrt(p_sample_var_1/n_smoker + 
+                                          p_sample_var_1/n_nonsmoker))
+
+power1 <- pnorm(cv_lo_p, (mu_smoker - mu_nonsmoker), 
+                sqrt(p_sample_var_1/n_smoker + p_sample_var_1/n_nonsmoker))
+power2 <- 1 - pnorm(cv_hi_p, (mu_smoker - mu_nonsmoker), 
+                    sqrt(p_sample_var_1/n_smoker + p_sample_var_1/n_nonsmoker))
+
+power_pooled <- sum(power1, power2)
+
+cv_lo_non <- qnorm(alpha / 2, 0, 
+               (sqrt(var_nonsmoker/n_smoker + var_nonsmoker/n_nonsmoker)))
+cv_hi_non <- qnorm(1 - alpha / 2, 0, 
+               (sqrt(var_nonsmoker/n_smoker + var_nonsmoker/n_nonsmoker)))
+
+power1 <- pnorm(cv_lo_non, (mu_smoker - mu_nonsmoker), 
+                (sqrt(var_nonsmoker/n_smoker + var_nonsmoker/n_nonsmoker)))
+power2 <- 1 - pnorm(cv_hi_non, (mu_smoker - mu_nonsmoker), 
+                    (sqrt(var_nonsmoker/n_smoker + var_nonsmoker/n_nonsmoker)))
+
+power_nonpooled <- sum(power1, power2)
+
 ```
-The pooled sample variance of the data is `r round(p_sample_var_1, 1)` using a degree of freedom value `r dof_1`. In this case, we reject the null hypothesis because the calculated p value, `r round(p_value_obs_1, 4)`, is smaller than the chosen $\alpha$ value of 0.05. In terms of t values, our observed t value of `r round(t_obs_1, 2)` is smaller than the t value, `r round(t_stat_1, 2)` for a two sided $\alpha$ of 0.05. 
 
-When computing the observed t value using the assumption that the population variances are not equivalent (variance smoker is `r round(var_smoker, 1)` and variance nonsmoker is `r round(var_nonsmoker, 1)`), a value of `r round(t_obs_2, 1)` is obtained.  Comparing that the two sided $\alpha$ of `r round(t_stat_2, 2)` with `r dof_2` degrees of freedom (as computed using the Satterthwaite Approximation see Appendix I: Equation 4). The observed t value is less than the chosen $\alpha$ value of 0.05. In case, there is sufficient evidence to reject the null hypothesis in favor of the alternative. 
+In order to begin we must first find the difference in mean blood pressure between smoker and non smokers in this dataset. This was calculated to be `r round((mu_smoker - mu_nonsmoker), 2)`. Despite this being a non zero number, we are not sure if there is in fact a difference or it this value was due to chance.
 
-The observed 95% confidence intervals are `r CI_pooled[1]` to `r CI_pooled[2]` for pooled sample variance and `r CI_nonpooled[1]` to `r CI_nonpooled[2]` for non pooled sample variance. It can be seen that 0 does not fall into the 95% confidence interval in either case. Therefore the null hypothesis can be rejected.
+In the first part of the analysis, we will use pooled sample variance (see Appendix I: Equation 1) which was calculated to be `r round(p_sample_var_1, 1)`. Under these conditions the p value was calculated to be `r round(p_value_obs_1, 4)` (using a degree of freedom value `r dof_1`) which is smaller than $\alpha$ of 0.05 (0.025 for two sided test). In terms of t values, the observed t value of `r round(t_obs_1, 2)` is smaller than the t value, `r round(t_stat_1, 2)` for a two sided $\alpha$ of 0.05.
 
-In all three case, there is sufficient evidence to reject the null hypothesis and to support the alternative at an $\alpha$ level of 0.05.
+Additionally, the 95% confidence limits were calculated for the pooled variance assumption. The observed interval is `r CI_pooled[1]` to `r CI_pooled[2]`  It can be seen that zero does not fall in the 95% confidence interval.
+
+Based on the aforementioned findings, we can reject the null hypothesis in favor of the alternative hypothesis at an $\alpha$ level of 0.05. In other words, there is significant evidence to support this group of smokers and non smokers have a different range of systolic blood pressure when using pooled variance.
+
+We will now conduct the same analysis as before, but now assuming unequal population variances. In this case the computed sample variances of the two groups are `r round(var_smoker, 1)` for smokers and `r round(var_nonsmoker, 1)` for non smokers. Using equation 3 from Appendix 1,  an observed t value of `r round(t_obs_2, 1)` is obtained.  Comparing that the two sided $\alpha$ of `r round(t_stat_2, 2)` with `r dof_2` degrees of freedom (as computed using the Satterthwaite Approximation see Appendix I: Equation 4). The observed t value is less than the chosen $\alpha$ value of 0.05, as in the case of pooled sample variance. 
+
+Furthermore, the 95% confidence internal in the non pooled case was found to be `r CI_nonpooled[1]` to `r CI_nonpooled[2]`. It can be noted that zero is absent from this range, as in the case of the pooled sample variance. In this second scenario, there is sufficient evidence to reject the null hypothesis and to support the alternative at an $\alpha$ level of 0.05.
+
+While both tests arrived to the same conclusion, our preference is the pooled variance version. This is simply based on the fact that the calculated standard deviation was smaller by a factor of 3 (see Appendix II for root variance values). 
+In conclusion, there is sufficient evidence that the blood pressure between smokers and nonsmokers are different. This statement holds true in all cases described in this paper. It should be noted, that while the observed systolic blood pressure values vary between smokers and non smokers, we do not know the underlying cause based on the provided data.
 
 
 \newpage
@@ -218,16 +251,16 @@ In Part I we were able to see how hypothesis testing allowed to find enough evid
 
 It is important to briefly discuss the concept of power in hypothesis testing. Power describes the probability of not committing a Type II error, which is to not reject the null hypothesis when there was in actuality enough evidence to do so. The probability of a Type II error is represented by $\beta$. Power is the complement to that probability (1 - $\beta$). The value of $\beta$ is the portion of the alternate distribution that is within the null hypothesis non rejection region limits. Below are a number of plots to help depict this concept. In each of the plots the shaded red is the null distribution and its location stays constant (mean = 3). The dark tails represent the rejection region of the null distribution. The outline distribution represents the "true" alternative distribution. Within that distribution is the shaded light blue region which is equal to $\beta$. It can be seen that as the difference between the two distributions shrinks the value of $\beta$ increases and the power shrinks. Power reaches minimum and $\beta$ reaches maximum when the two distributions are the same. 
 
-```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.dim = c(6, 4), fig.align = 'center'}
+```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.dim = c(6, 2) ,fig.align = 'center'}
 
 #Part II
 #Introduction
 
-options(repr.plot.width = 12, repr.plot.height = 5, repr.plot.res = 150)
+#options(repr.plot.width = 12, repr.plot.height = 3, repr.plot.res = 150)
 set.seed(100)
 
 null_mean <- 3
-alt_means <- c(0, 1, 3, 5)
+alt_means <- c(0, 3, 5)
 plot_list <- list()
 
 #plot_colors <- c("#072ac8","#1e96fc","#a2d6f9","#fcf300","#ffc600")
@@ -268,16 +301,17 @@ for(i in 1:length(alt_means)){
                                    ),
                                 stat = "density", fill = plot_colors[2], alpha = 0.5
                                      ) +
-                            xlim(-2, 8) + xlab("") + ylab("") + ggtitle(title_string)
+                            xlim(-2, 8) + xlab("") + ylab("") + ggtitle(title_string) +
+                            theme(text = element_text(size = 8))
     
                                 }
 
-do.call(grid.arrange, plot_list)
+do.call(grid.arrange, c(plot_list, ncol = 3, heights = 0.5))
 ```
 
 ### Simulation Study
 
-Below, various scenarios were simulated by creating 2 normally distributed data sets of various mean, variances, and sample sizes. Each scenario was repeated a thousand times. For each of those repeats a hypothesis test was conducted and the number of times the null hypothesis was rejected was recorded. See Appendix III for results. All hypothesis testing was conducted assuming different values of variance, regardless of the actual variance values. 
+Below, various scenarios were simulated by creating 2 normally distributed data sets of various mean, variances, and sample sizes. Each scenario was repeated a thousand times. For each of those repeats a hypothesis test was conducted and the number of times the null hypothesis was rejected was recorded. See Appendix III for results. All hypothesis testing was using pooled and unpooled variance, regardless of the actual values of variance. 
 
 The following table includes the values of each parameter used in the simulation:
 
@@ -305,7 +339,8 @@ test_function <- function (x, y, pooled = FALSE){
     var_2 <- sample_variance(y, sampling = TRUE)
     
     #Calculate the pooled sample variance
-    pooled_sample <- ((length(x) - 1) * var_1 + (length(y) - 1) * var_2) / (length(x) + length(y) - 2)
+    pooled_sample <- ((length(x) - 1) * var_1 + 
+                          (length(y) - 1) * var_2) / (length(x) + length(y) - 2)
     
     #calculate the observed t statistic
     if (pooled == TRUE){
@@ -323,11 +358,21 @@ test_function <- function (x, y, pooled = FALSE){
         dof <- satterth(var_1, var_2, length(x), length(y))
     }
     
-    #Determine whether or not the null hypothesis can be rejected (1 = rejected, 0 = not rejected)
+    # Determine whether or not the null hypothesis 
+    # can be rejected (1 = rejected, 0 = not rejected)
     verdict <- !between(ttest, qt(alpha / 2, dof), qt(1 - alpha / 2, dof))
     
+    #Power calculation assuming calculated difference in means is Ha 
+    cv_lo <- qnorm(alpha / 2, 0, cal_sigma)
+    cv_hi <- qnorm(1 - alpha / 2, 0, cal_sigma)
+    
+    power1 <- pnorm(cv_lo, (mu_1 - mu_2), cal_sigma)
+    power2 <- 1 - pnorm(cv_hi, (mu_1 - mu_2), cal_sigma)
+    
+    power <- sum(power1, power2)
+    
     #Return calculated values
-    return(c(mu_1, var_1, mu_2, var_2, ttest, cal_sigma, dof,verdict))
+    return(c(mu_1, var_1, mu_2, var_2, ttest, cal_sigma, dof, verdict, power))
 }
 
 
@@ -340,48 +385,136 @@ mu2 <- 5
 var2 <- 1
 n2 <- c(10, 30, 70)
 
-sim_test <- function(x_mu, x_var, x_n, y_mu, y_var, y_n, pooled = TRUE){
+sim_test <- function(x_mu, x_var, x_n, y_mu, y_var, y_n, pooled){
     
-    sim_data_results <- matrix(rep(0, 8), ncol = 8)
+    sim_data_results <- matrix(rep(0, 9), ncol = 9)
     
     for (i in 1:1000){
         
         sim_set1 <- rnorm(x_n, x_mu, sqrt(x_var))
         sim_set2 <- rnorm(y_n, y_mu, sqrt(y_var))
         
-        sim_data_results <- rbind(sim_data_results, test_function(sim_set1, sim_set2, pooled))
+        sim_data_results <- rbind(sim_data_results, 
+                                  test_function(sim_set1, sim_set2, pooled))
         
         #print(sim_data_results)
     }
     
     df_sim_data <- data.frame(sim_data_results[2 : nrow(sim_data_results),])
-    colnames(df_sim_data) = c("Null Mean", "Null Variance", "Alternate Mean", "Alternate Variance",
-                                  "T statistic", "Calculated Variance", "DoF", "Null Reject")
+    colnames(df_sim_data) = c("Null Mean", "Null Variance", "Alternate Mean", 
+                              "Alternate Variance", "T statistic", 
+                              "Calculated Variance", "DoF", "Null Reject", 
+                              "Power")
     return(df_sim_data)
 }
 
 # HA: mean = 5, var = 1
-df_combo <- data.frame(expand.grid(mu1, var1, n1, mu2, var2, n2))
-df_combo2 <- cbind(1:nrow(df_combo), df_combo, rep(0, nrow(df_combo)))
-colnames(df_combo2) <- c("Test Case", "mu1", "var1", "n1", "mu2", "var2", "n2", "Test Results")
+df_combo <- expand.grid(mu1, var1, n1, mu2, var2, n2)
+df_combo2 <- tibble(cbind(1:nrow(df_combo), df_combo, 
+                          matrix(rep(0, 2 * nrow(df_combo)), ncol = 2)))
+colnames(df_combo2) <- c("Test_Case", "mu1", "var1", "n1", "mu2", "var2", 
+                         "n2", "Test_Results_up", "Test_Results_po")
 
 test_results <- list()
+test_results2 <- list()
 
 for (i in 1:nrow(df_combo)){
-    test_results[[i]] <- do.call(sim_test, as.list(as.numeric(df_combo[i,])))
+    test_results[[i]] <- do.call(sim_test, 
+                                 as.list(as.numeric(c(df_combo[i,],
+                                                    pooled = FALSE))))
+    test_results2[[i]] <- do.call(sim_test, 
+                                  as.list(as.numeric(c(df_combo[i,], 
+                                                       pooled = TRUE))))
     df_combo2[i, 8] <- sum(as.data.frame(test_results[i])[,8])
+    df_combo2[i, 9] <- sum(as.data.frame(test_results2[i])[,8])    
     }
 
-#df_combo2
+df_combo2 <- df_combo2 %>% mutate(diff = mu1 - mu2)
+#df_combo2 %>%  head()
+
+# Some summary statitics to look for relationships in the attributes
+av_med_stats_by_diff <- 
+    df_combo2 %>% group_by(diff) %>% summarise(avg_up = mean(Test_Results_up), 
+                                               med_up = median(Test_Results_up), 
+                                               avg_po = mean(Test_Results_po), 
+                                               med_po = median(Test_Results_po))
+
+
+av_med_stats_by_var <- 
+    df_combo2 %>% group_by(var1) %>% summarise(avg_up = mean(Test_Results_up), 
+                                               med_up = median(Test_Results_up), 
+                                               avg_po = mean(Test_Results_po), 
+                                               med_po = median(Test_Results_po))
+
+av_med_stats_by_nulln <- 
+    df_combo2 %>% group_by(n1) %>% summarise(avg_up = mean(Test_Results_up), 
+                                             med_up = median(Test_Results_up), 
+                                             avg_po = mean(Test_Results_po), 
+                                             med_po = median(Test_Results_po))
+
+av_med_stats_by_altn <- 
+    df_combo2 %>% group_by(n2) %>% summarise(avg_up = mean(Test_Results_up), 
+                                             med_up = median(Test_Results_up), 
+                                             avg_po = mean(Test_Results_po), 
+                                             med_po = median(Test_Results_po))
+
+av_med_stats_by_comn <- 
+    df_combo2 %>% mutate(comn = n1 + n2) %>% group_by(comn) %>% 
+    summarise(avg_up = mean(Test_Results_up), 
+              med_up = median(Test_Results_up), 
+              avg_po = mean(Test_Results_po), 
+              med_po = median(Test_Results_po))
+
 ```
 
-It was noted that the smaller difference between the alternative and null mean values were, the less likely the null hypothesis was rejected. Larger values of variance also reduced the number of rejected null hypothesis. In both cases, the more overlap between the two distributions, the less powerful the test. One way that can increase the power of the t-test is to increase the sample size. For a specific example, we can look at test cases #10 and #129. In both cases the distribution means were 6 and 5 for the null and alternative hypotheses respectively, along with variances of 1 for both distributions. The only difference between the two cases was the sample size ($n_{10}$ = 10 and $n_{129}$ = 70). This increase in sample size resulted in almost a 6 fold increase in power (169 vs 958 rejected nulls). Test cases 69 and 114 use different combinations of, but lower than 70, sample sizes than the aforementioned two. While they exhibited increased signs of power, they did not get as high as test case 129. It stands to reason that large variances and small deltas in mean can be mitigated by increasing the sample size accordingly. 
+It was noted that the smaller difference between the alternative and null mean values were, the less likely the null hypothesis was rejected. Larger values of variance also reduced the number of rejected null hypothesis. In both cases, the more overlap between the two distributions, the less powerful the test. One way that can increase the power of the t-test is to increase the sample size. For a specific example, we can look at test cases #9 and #129. In both cases the distribution means were 6 and 5 for the null and alternative hypotheses respectively, along with the respective variances of 4 and 1. The only difference between the two cases was the sample size ($n_{9}$ = 10 and $n_{129}$ = 70). This increase in sample size resulted in almost an 4 fold increase in power (286/952 (pooled) or 265/948 (unpooled) rejected nulls). Test cases 69 and 114 use different combinations of, but lower than 70, sample sizes than the aforementioned two. While they exhibited increased signs of power, they did not get as high as test case 129. It stands to reason that large variances and small deltas in mean can be mitigated by increasing the sample size accordingly. 
+
+
+Below are summaries of (1 - $\beta$) calculations for test cases #9 and #129:
+
+```{r, echo = FALSE}
+
+pow_tab_9 <- test_results[[9]] %>% pull(Power) %>% summary() %>% unname() %>% matrix(ncol = 1)
+pow_tab_129 <- test_results[[129]] %>% pull(Power) %>% summary() %>% unname() %>% matrix(ncol = 1)
+
+d <- cbind(pow_tab_9, pow_tab_129)
+                                               
+colnames(d) = c("Test Case #9","Test Case #129")
+rownames(d) = c("Min", "1st Quantile", "Median", "Mean", "3rd Quantile", "Max")
+
+knitr::kable(d)
+
+```
+
+
+The pattern further.......
+
+
+```{r, echo = FALSE, fig.dim = c(5, 2) , fig.align = 'center'}
+av_med_stats_by_diff %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
+                         ggplot() + geom_line(aes(x = diff, y = calc, color = stat)) + 
+                                    geom_point(aes(x = diff, y = calc, color = stat)) + 
+                                    xlab("Difference in Means") +
+                                    ylab("Null Reject Statistics") + 
+                                    ggtitle("Affect of" ~ Delta ~ "Means on Test Sensitivity") +
+                                    scale_color_discrete(name = "Attribute Stat",
+                                                         labels = c("Pooled/Mean", 
+                                                                    "Unpooled/Mean", 
+                                                                    "Pooled/Median", 
+                                                                    "Unpooled/Median")) +
+                                    theme(legend.position = c(0.85, 0.3),
+                                          title = element_text(size = 8),
+                                          legend.text = element_text(size = 6),
+                                          legend.key.height = unit(0.25, 'cm'),
+                                          legend.key.width = unit(0.25, 'cm'))
+```
 
 \newpage
 
 ## Appendix I: Equations and Figures
 
-## Figures
+### Figure 1: Data plots
+
 ```{r, echo = FALSE, fig.dim = c(7, 2.5), fig.align = 'center'}
 # Plotting
 options(repr.plot.width = 6, repr.plot.height = 4, repr.plot.res = 150)
@@ -390,13 +523,11 @@ plot_grid(total_data, sep_data, plot_3, align = 'vh',
           hjust = -1,nrow = 1, ncol = 3, labels = c("A", "B", "C"))
 ```
 
-### Figure 1: Data plots
+### Figure 2: Q-Q Plot
 
 ```{r, echo = FALSE, fig.dim = c(5, 3)}
 data_qqplot + theme_bw()
 ```
-
-### Figure 2: Q-Q Plot
 
 ---
 
@@ -432,26 +563,31 @@ $$
 
 ## Appendix II: Part I Results
 
-Data Mean: `r mean(df_data$sysBP)`  
-Data Sample Variance: `r sample_variance(df_data$sysBP)`  
+```{r, echo = FALSE}
+d1 <- matrix(c(mean(df_data$sysBP), sample_variance(df_data$sysBP), 
+              mu_smoker, var_smoker,
+              mu_nonsmoker, var_nonsmoker, 
+              diff_mu, p_sample_var_1, p_sample_var_w, 
+              np_sample_var_2, CI_pooled, CI_nonpooled), ncol = 1)
 
-Smoker Mean: `r mu_smoker`  
-Smoker Variance: `r var_smoker`  
 
-Nonsmoker Mean: `r mu_nonsmoker`  
-Nonsmoker Variance: `r var_nonsmoker`  
+rownames(d1) <- c("Data Mean", "Data Sample Variance", "Smoker Mean", 
+                 "Smoker Variance", 
+                 "Nonsmoker Mean", "Nonsmoker Variance", 
+                 "Difference in Mean", "Pooled Sample Varance", 
+                 "Weighted Pooled Sample Root Variance", 
+                 "Weighted Nonpooled Sample Root Variance",
+                 "CI Pooled Lower", "CI Pooled Upper",
+                 "CI Nonpooled Lower", "CI Nonpooled Upper")
 
-Difference in mean: `r diff_mu`  
-
-Pooled Sample Variance: `r p_sample_var_1`  
-Nonpooled Sample Variance: `r np_sample_var_2`
-
-CI Pooled: `r CI_pooled`  
-CI Nonpooled: `r CI_nonpooled`
+d1 %>% knitr::kable(col.names = c("Attribute Value"))
+```
 
 \newpage
 
 ## Appendix III: Part II Results
+
+### Simulation Data
 
 ```{r, echo = FALSE}
 knitr::kable(df_combo2, col.names = c("Test Case", 
@@ -461,8 +597,139 @@ knitr::kable(df_combo2, col.names = c("Test Case",
                                       "$\\mu_2$", 
                                       "$\\sigma_2^2$", 
                                       "$n_2$",
-                                      "Test Results"), 
+                                      "Test Results Unpooled",
+                                      "Test Results Pooled",
+                                      "Difference in Mean"), 
              escape = FALSE)
+```
+
+\newpage
+
+### Summary of Simulation Data
+
+```{r, echo = FALSE, fig.dim = c(7, 3)}
+av_med_stats_by_diff %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
+                         ggplot() + geom_line(aes(x = diff, y = calc, color = stat)) + 
+                                    geom_point(aes(x = diff, y = calc, color = stat)) + 
+                                    xlab("Difference in Means") +
+                                    ylab("Null Reject Statistics") + 
+                                    ggtitle("Affect of" ~ Delta ~ "Means on Test Sensitivity") +
+                                    scale_color_discrete(name = "Attribute Stat",
+                                                         labels = c("Pooled/Mean", 
+                                                                    "Unpooled/Mean", 
+                                                                    "Pooled/Median", 
+                                                                    "Unpooled/Median")
+                                                         ) +
+                                    theme(#legend.position = c(0.85, 0.3),
+                                          legend.text = element_text(size = 8),
+                                          legend.key.height = unit(0.25, 'cm'),
+                                          legend.key.width = unit(0.4, 'cm'))
+
+knitr::kable(av_med_stats_by_diff, col.names = c("$\\Delta$ Means",
+                                                 "Average # Rejects (Unpooled)",
+                                                 "Median # Rejects (Unpooled)",
+                                                 "Average # Rejects (Pooled)",
+                                                 "Median # Rejects (Pooled)"), 
+             escape = FALSE)
+
+av_med_stats_by_var %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
+                         ggplot() + geom_line(aes(x = var1, y = calc, color = stat)) + 
+                                    geom_point(aes(x = var1, y = calc, color = stat)) + 
+                                    xlab("Sample Variance") +
+                                    ylab("Null Reject Statistics") + 
+                                    ggtitle("Affect of Variance on Test Sensitivity") +
+                                    theme(#legend.position = c(0.85, 0.8),
+                                          legend.text = element_text(size = 8),
+                                          legend.key.height = unit(0.25, 'cm'),
+                                          legend.key.width = unit(0.4, 'cm')) +
+                                    scale_color_discrete(name = "Attribute Stat",
+                                                         labels = c("Pooled/Mean", 
+                                                                    "Unpooled/Mean", 
+                                                                    "Pooled/Median", 
+                                                                    "Unpooled/Median")
+                                                         )
+
+knitr::kable(av_med_stats_by_var, col.names = c("Sample Variance",
+                                                 "Average # Rejects (Unpooled)",
+                                                 "Median # Rejects (Unpooled)",
+                                                 "Average # Rejects (Pooled)",
+                                                 "Median # Rejects (Pooled)"), 
+             escape = FALSE)
+
+
+av_med_stats_by_nulln %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
+                          ggplot() + geom_line(aes(x = n1, y = calc, color = stat)) + 
+                                     geom_point(aes(x = n1, y = calc, color = stat)) + 
+                                     xlab("Null Sample Size") +
+                                     ylab("Null Reject Statistics") +
+                                     ggtitle("Affect of Null Sample Size on Test Sensitivity") +
+                                     theme(#legend.position = c(0.85, 0.65),
+                                           legend.text = element_text(size = 8),
+                                           legend.key.height = unit(0.25, 'cm'),
+                                           legend.key.width = unit(0.4, 'cm')) +
+                                     scale_color_discrete(name = "Attribute Stat",
+                                                         labels = c("Pooled/Mean", 
+                                                                    "Unpooled/Mean", 
+                                                                    "Pooled/Median", 
+                                                                    "Unpooled/Median"))
+
+
+
+knitr::kable(av_med_stats_by_nulln, col.names = c("Null Sample Size",
+                                                 "Average # Rejects (Unpooled)",
+                                                 "Median # Rejects (Unpooled)",
+                                                 "Average # Rejects (Pooled)",
+                                                 "Median # Rejects (Pooled)"), 
+             escape = FALSE)
+
+
+av_med_stats_by_altn %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
+                          ggplot() + geom_line(aes(x = n2, y = calc, color = stat)) + 
+                                     geom_point(aes(x = n2, y = calc, color = stat)) + 
+                                     xlab("Alternative Sample Size") +
+                                     ylab("Null Reject Statistics") + 
+                                     ggtitle("Affect of Alternative Sample Size on Test Sensitivity") +
+                                     theme(#legend.position = c(0.85, 0.65),
+                                           legend.text = element_text(size = 8),
+                                           legend.key.height = unit(0.25, 'cm'),
+                                           legend.key.width = unit(0.4, 'cm')) +
+                                     scale_color_discrete(name = "Attribute Stat",
+                                                         labels = c("Pooled/Mean", 
+                                                                    "Unpooled/Mean", 
+                                                                    "Pooled/Median", 
+                                                                    "Unpooled/Median"))
+
+
+knitr::kable(av_med_stats_by_altn, col.names = c("Alternative Sample Size",
+                                                 "Average # Rejects (Unpooled)",
+                                                 "Median # Rejects (Unpooled)",
+                                                 "Average # Rejects (Pooled)",
+                                                 "Median # Rejects (Pooled)"), 
+             escape = FALSE)
+
+av_med_stats_by_comn %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
+                          ggplot() + geom_line(aes(x = comn, y = calc, color = stat)) + 
+                                     geom_point(aes(x = comn, y = calc, color = stat)) + 
+                                     xlab("Total Sample Size") +
+                                     ylab("Null Reject Statistics") + 
+                                     ggtitle("Affect of Total Sample Size on Test Sensitivity") +
+                                     theme(#legend.position = c(0.85, 0.7),
+                                           legend.text = element_text(size = 8),
+                                           legend.key.height = unit(0.25, 'cm'),
+                                           legend.key.width = unit(0.4, 'cm')) +
+                                     scale_color_discrete(name = "Attribute Stat",
+                                                         labels = c("Pooled/Mean", 
+                                                                    "Unpooled/Mean", 
+                                                                    "Pooled/Median", 
+                                                                    "Unpooled/Median"))
+
+knitr::kable(av_med_stats_by_comn, col.names = c("Combined Sample Size",
+                                                 "Average # Rejects (Unpooled)",
+                                                 "Median # Rejects (Unpooled)",
+                                                 "Average # Rejects (Pooled)",
+                                                 "Median # Rejects (Pooled)"), 
+             escape = FALSE)
+
 ```
 
 \newpage
