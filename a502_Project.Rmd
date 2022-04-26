@@ -519,6 +519,30 @@ After performing 1,000 trials for each of 135 different scenarios, the data show
 
 \newpage
 
+## Contributions
+
+```{r echo = FALSE}
+cnames <- c("Halid","Justin")
+rnames <- c("template creation", "code", "code review", "write up", "editing", "formatting", "discussion", "calculation verification")
+
+cont<- rbind(
+c("75%","25%"), 
+c("80%","20%"),
+c("50%","50%"),
+c("35%","65%"),
+c("40%","60%"),
+c("30%","70%"),
+c("50%","50%"),
+c("40%","60%"))
+
+rownames(cont) <- rnames
+colnames(cont) <- cnames
+
+knitr::kable(cont)
+```
+
+\newpage
+
 ## Appendix I: Equations and Figures
 
 ### Normality of Data
