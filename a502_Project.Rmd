@@ -241,11 +241,12 @@ Here, both tests allow us to reject the null hypothesis, so either one could be 
 
 ### Introduction
 
-In Part I we were able to see how hypothesis testing allowed to find enough evidence to challenge the "status quo" argument that smoking has no affect on the blood pressure of a person. What we found, through a number of robust statistical methods, that the difference in means, calculated to be `r mu_nonsmoker - mu_smoker`, was significant to not have arisen by chance. That within an $\alpha$ of 5%, we are confident that the two groups do exhibit measurable differences. In the following sections, we will explore, through simulated data, the concept of randomness in data and what steps we can take to mitigate that randomness. All simulated date will be generated using the built in rnorm() function in R. 
+In Part I, we were able to see how hypothesis testing allowed us to produce enough evidence to challenge the status quo argument that “smoking has no effect on the blood pressure of a person.” We found, through a number of robust statistical methods, the difference in means (calculated to be `r round(diff_mu, 2)`) was significant enough to not have arisen merely by chance. Within an $\alpha$ of 5%, we are confident that the two groups do exhibit measurable differences. In the following sections, we will explore, through simulated data, the concept of randomness in data and what steps we can take to mitigate that randomness. All simulated data will be generated using the built-in rnorm() function in R.
 
 ### Power of Hypothesis Testing
 
-It is important to briefly discuss the concept of power in hypothesis testing. Power describes the probability of not committing a Type II error, which is to not reject the null hypothesis when there was in actuality enough evidence to do so. The probability of a Type II error is represented by $\beta$. Power is the complement to that probability (1 - $\beta$). The value of $\beta$ is the portion of the alternate distribution that is within the null hypothesis non rejection region limits. Below are a number of plots to help depict this concept. In each of the plots the shaded red is the null distribution and its location stays constant (mean = 3). The dark tails represent the rejection region of the null distribution. The outline distribution represents the "true" alternative distribution. Within that distribution is the shaded light blue region which is equal to $\beta$. It can be seen that as the difference between the two distributions shrinks the value of $\beta$ increases and the power shrinks. Power reaches minimum and $\beta$ reaches maximum when the two distributions are the same. 
+It is important to briefly discuss the concept of power in hypothesis testing. Power describes the probability of not committing a Type II error, which is to not reject the null hypothesis when there was in actuality enough evidence to do so. The probability of a Type II error is represented by $\beta$. Power is the complement to that probability (1 - $\beta$) and can be thought of as test sensitivity. The more powerful the test the more sensitive it is to differences between distributions. The value of $\beta$ is the portion of the alternate distribution that is within the null hypothesis non rejection region limits. Below are a number of plots to help depict this concept. In each of the plots the shaded red is the null distribution and its location stays constant (mean = 3). The dark tails represent the rejection region of the null distribution and correspond to the size of $\alpha$ (in this case 2.5% on each side. $\alpha$ also indicates the probability of committing a Type I error, rejecting the null hypothesis incorrectly. The outline distribution represents the "true" alternative distribution. Within that distribution is the shaded light blue region which is equal to $\beta$. It can be seen that as the difference between the two distributions shrinks the value of $\beta$ increases and the power shrinks. Power reaches minimum and $\beta$ reaches maximum when the two distributions are the same. 
+
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.dim = c(6, 2) ,fig.align = 'center'}
 
@@ -307,18 +308,18 @@ do.call(grid.arrange, c(plot_list, ncol = 3, heights = 0.5))
 
 ### Simulation Study
 
-Below, various scenarios were simulated by creating 2 normally distributed data sets of various mean, variances, and sample sizes. Each scenario was repeated a thousand times. For each of those repeats a hypothesis test was conducted and the number of times the null hypothesis was rejected was recorded. See Appendix III for results. All hypothesis testing was using pooled and unpooled variance, regardless of the actual values of variance. 
+Multiple scenarios were simulated by creating 2 normally distributed data sets of various mean, variances, and sample sizes. Each scenario was repeated a thousand times. For each of those repeats a hypothesis test was conducted and the number of times the null hypothesis was rejected was recorded. See Appendix III for results. All hypothesis testing was using pooled and unpooled variance, regardless of the actual values of variance. 
 
 The following table includes the values of each parameter used in the simulation:
 
 |Parameter|Possible Values|
 |-|-|
-|$\mu_{0}$|0, 4, 5, 6, 10|
-|$\sigma_{0}^{2}$|1, 4, 9|
-|$n_{0}$|10, 30, 70|
-|$\mu_{A}$|5|
-|$\sigma_{A}^{2}$|1|
-|$n_{A}$|10, 30, 70|
+|$\mu_{1}$|0, 4, 5, 6, 10|
+|$\sigma_{1}^{2}$|1, 4, 9|
+|$n_{1}$|10, 30, 70|
+|$\mu_{2}$|5|
+|$\sigma_{2}^{2}$|1|
+|$n_{2}$|10, 30, 70|
 
 ```{r, echo = FALSE, message=FALSE, warning=FALSE}
 #Part II
@@ -463,28 +464,9 @@ av_med_stats_by_comn <-
 
 ```
 
-It was noted that the smaller difference between the alternative and null mean values were, the less likely the null hypothesis was rejected. Larger values of variance also reduced the number of rejected null hypothesis. In both cases, the more overlap between the two distributions, the less powerful the test. One way that can increase the power of the t-test is to increase the sample size. For a specific example, we can look at test cases #9 and #129. In both cases the distribution means were 6 and 5 for the null and alternative hypotheses respectively, along with the respective variances of 4 and 1. The only difference between the two cases was the sample size ($n_{9}$ = 10 and $n_{129}$ = 70). This increase in sample size resulted in almost an 4 fold increase in power (286/952 (pooled) or 265/948 (unpooled) rejected nulls). Test cases 69 and 114 use different combinations of, but lower than 70, sample sizes than the aforementioned two. While they exhibited increased signs of power, they did not get as high as test case 129. It stands to reason that large variances and small deltas in mean can be mitigated by increasing the sample size accordingly. 
+### Observations
 
-
-Below are summaries of (1 - $\beta$) calculations for test cases #9 and #129:
-
-```{r, echo = FALSE}
-
-pow_tab_9 <- test_results[[9]] %>% pull(Power) %>% summary() %>% unname() %>% matrix(ncol = 1)
-pow_tab_129 <- test_results[[129]] %>% pull(Power) %>% summary() %>% unname() %>% matrix(ncol = 1)
-
-d <- cbind(pow_tab_9, pow_tab_129)
-                                               
-colnames(d) = c("Test Case #9","Test Case #129")
-rownames(d) = c("Min", "1st Quantile", "Median", "Mean", "3rd Quantile", "Max")
-
-knitr::kable(d)
-
-```
-
-
-The pattern further.......
-
+It was noted that the smaller difference between the alternative and null mean values were, the less likely the null hypothesis was rejected (see plot below and for more detail Appendix IV Item A). Larger values of variance also reduced the number of rejected null hypothesis (see Appendix IV Item B). In both cases, the more overlap between the two distributions, the less powerful the test. It was observed that increasing the sample size increased power (see Appendix IV Item C, D, and E). For a specific example, we can look at test cases #9 and #129 where $\mu_{1}$ = 6, $\mu_{2}$ = 5, $\sigma^{2}_{1}$ = 4 and $\sigma^{2}_{2}$ = 1. The two cases differed in sample size where $n_{9}$ = 10 and $n_{129}$ = 70. This increase in sample size resulted in almost a 4 fold increase in power (271 vs 951 (pooled) or 265 vs 948 (unequal) rejected nulls). It stands to reason that large variances and small deltas in mean can be mitigated by increasing the sample size accordingly. 
 
 ```{r, echo = FALSE, fig.dim = c(5, 2) , fig.align = 'center'}
 av_med_stats_by_diff %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
@@ -492,7 +474,8 @@ av_med_stats_by_diff %>% gather(key = "stat", value = "calc", avg_up:med_po) %>%
                                     geom_point(aes(x = diff, y = calc, color = stat)) + 
                                     xlab("Difference in Means") +
                                     ylab("Null Reject Statistics") + 
-                                    ggtitle("Affect of" ~ Delta ~ "Means on Test Sensitivity") +
+                                    scale_x_continuous(breaks = seq(-5, 5, 1)) +
+                                    ggtitle("Effect of" ~ Delta ~ "Means on Test Sensitivity") +
                                     scale_color_discrete(name = "Attribute Stat",
                                                          labels = c("Pooled/Mean", 
                                                                     "Unpooled/Mean", 
@@ -505,13 +488,41 @@ av_med_stats_by_diff %>% gather(key = "stat", value = "calc", avg_up:med_po) %>%
                                           legend.key.width = unit(0.25, 'cm'))
 ```
 
+Type I errors can be clearly observed in the simulated data. All test cases where $\Delta\mu$ was zero, roughly 50 out of the 1000 simulations resulted in rejected null hypotheses (see Appendix IV Item A table). These erroneous results, in roughly 5% of the cases, are due to the difference in variance between the distribution. That percentage value closely matches that of $\alpha$.
+
+One final observation, for each of the test cases (1 - $\beta$) was calculated under the assumption that the observed $\Delta\mu$ was the true distribution. It was found that (1 - $\beta$) values followed a similar pattern to that of rejected null hypotheses indicating the relationship between power and sensitivity. Below is the calculations for test cases 9 and 129:
+
+```{r, echo = FALSE}
+
+pow_tab_9a <- test_results[[9]] %>% pull(Power) %>% summary() %>% unname() %>% matrix(ncol = 1)
+pow_tab_9b <- test_results2[[9]] %>% pull(Power) %>% summary() %>% unname() %>% matrix(ncol = 1)
+pow_tab_129a <- test_results[[129]] %>% pull(Power) %>% summary() %>% unname() %>% matrix(ncol = 1)
+pow_tab_129b <- test_results2[[129]] %>% pull(Power) %>% summary() %>% unname() %>% matrix(ncol = 1)
+
+d <- cbind(pow_tab_9a, pow_tab_9b, pow_tab_129a, pow_tab_129b)[2:5,]
+
+colnames(d) = c("Test #9 (pooled)", "Test #9 (unequal)", "Test #129 (pooled)", "Test #129 (unequal)")
+rownames(d) = c("1st Quartile", "Median", "Mean", "3rd Quartile")
+
+knitr::kable(d)
+
+```
+
+### Conclusion
+
+In Part I, we sought to reject the null hypothesis and determine which testing procedure was preferable by performing t-tests in terms of both p-values and confidence intervals with pooled and unequal variances. The results showed that there is a measurable difference in systolic blood pressure and a test with lower variance is preferable in order to reject the null hypothesis. These results, however, were the end-product of two tests run in two scenarios. To verify we came to the correct conclusions, it was important to run a numerical simulation study with many more differing variables which would, in turn, create many more scenarios. If the results led to the same conclusions, it would be safe to assume (with high probability) that our conclusions from Part I were correct.
+
+After performing 1,000 trials for each of 135 different scenarios, the data showed (as described above) that the probability of rejecting the null hypothesis is maximized with large differences in means and low variances. The data also showed that this ideal scenario can be “forced” by increasing sample sizes when the differences in means are small and variances are large. Importantly, increasing the sample size greatly increases the power, or probability of rejecting the null hypothesis when it should, in fact, be rejected. The results from Parts I and II agree, therefore, we can assume our conclusions were correct.
+
 \newpage
 
 ## Appendix I: Equations and Figures
 
 ### Normality of Data
 
-Plotting the density of total data (Figure 1A), we can see that it closely follows a normal distribution. Density plots of the split data exhibit similar forms (Figure 1B). We calculated the kurtosis and the skew of the data and found them to `r c(round(data_kurtosis, 3), round(data_skew, 3))` for kurtosis and skew respectively. These values are quite close to those typically found in normally distributed data. Additionally, the calculated values of sample standard deviation, $\frac{IQR^{*}}{1.35}$, and $\frac{MAD^{*}}{0.675}$ are `r round(sqrt(data_samVar), 2)`, `r round(eIQR, 2)`, and `r round(eMAD, 2)`. The similarities between the three values indicate that the data is heavily influenced by outliers. Therefore, we will assume the data and the subsequent split data to be normal. 
+Plotting the density of total data (Figure 1A), we can see that it closely follows a normal distribution. Density plots of the split data exhibit similar forms (Figure 1B and 1C). We calculated the kurtosis and the skew of the data and found them to `r c(round(data_kurtosis, 3), round(data_skew, 3))` for kurtosis and skew respectively. These values are quite close to those typically found in normally distributed data. Additionally, the calculated values of sample standard deviation, $\frac{IQR^{*}}{1.35}$, and $\frac{MAD^{*}}{0.675}$ are `r round(sqrt(data_samVar), 2)`, `r round(eIQR, 2)`, and `r round(eMAD, 2)`. The similarities between the three values indicate that the data is not heavily influenced by outliers and the Q-Q plot confirms this (See Figure 2). Therefore, we will assume the data and the subsequent split data to be normal.
+
+*Interquartile Range (IQR), Median Absolute Deviation (MAD)
 
 ### Figure 1: Data plots
 ```{r, echo = FALSE, fig.dim = c(7, 2.5), fig.align = 'center'}
@@ -532,7 +543,7 @@ data_qqplot + theme_bw()
 
 ---
 
-## Equations:
+### Equations:
 
 \begingroup
 \fontsize{16}{16}\selectfont
@@ -576,8 +587,8 @@ rownames(d1) <- c("Data Mean", "Data Sample Variance", "Smoker Mean",
                  "Smoker Variance", 
                  "Nonsmoker Mean", "Nonsmoker Variance", 
                  "Difference in Mean", "Pooled Sample Varance", 
-                 "Weighted Pooled Sample Root Variance", 
-                 "Weighted Nonpooled Sample Root Variance",
+                 "T-Statistic Std Deviation (Pooled)", 
+                 "T-Statistic Std Deviation (Unequal)",
                  "CI Pooled Lower", "CI Pooled Upper",
                  "CI Nonpooled Lower", "CI Nonpooled Upper")
 
@@ -598,15 +609,17 @@ knitr::kable(df_combo2, col.names = c("Test Case",
                                       "$\\mu_2$", 
                                       "$\\sigma_2^2$", 
                                       "$n_2$",
-                                      "Test Results Unpooled",
-                                      "Test Results Pooled",
+                                      "# of Rejected Null (Unequal $\\sigma^{2}$)",
+                                      "# of Rejected Null (Pooled $\\sigma^{2}$)",
                                       "Difference in Mean"), 
              escape = FALSE)
 ```
 
 \newpage
 
-### Summary of Simulation Data
+## Appendix IV: Part II Summary
+
+### Item A
 
 ```{r, echo = FALSE, fig.dim = c(7, 3)}
 av_med_stats_by_diff %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
@@ -614,7 +627,8 @@ av_med_stats_by_diff %>% gather(key = "stat", value = "calc", avg_up:med_po) %>%
                                     geom_point(aes(x = diff, y = calc, color = stat)) + 
                                     xlab("Difference in Means") +
                                     ylab("Null Reject Statistics") + 
-                                    ggtitle("Affect of" ~ Delta ~ "Means on Test Sensitivity") +
+                                    ggtitle("Effect of" ~ Delta ~ "Means on Test Sensitivity") +
+                                    scale_x_continuous(breaks = seq(-5, 5, 1)) + 
                                     scale_color_discrete(name = "Attribute Stat",
                                                          labels = c("Pooled/Mean", 
                                                                     "Unpooled/Mean", 
@@ -632,13 +646,18 @@ knitr::kable(av_med_stats_by_diff, col.names = c("$\\Delta$ Means",
                                                  "Average # Rejects (Pooled)",
                                                  "Median # Rejects (Pooled)"), 
              escape = FALSE)
+```
 
+### Item B
+
+```{r, echo = FALSE, fig.dim = c(7, 3)}
 av_med_stats_by_var %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
                          ggplot() + geom_line(aes(x = var1, y = calc, color = stat)) + 
                                     geom_point(aes(x = var1, y = calc, color = stat)) + 
                                     xlab("Sample Variance") +
                                     ylab("Null Reject Statistics") + 
-                                    ggtitle("Affect of Variance on Test Sensitivity") +
+                                    ggtitle("Effect of Variance on Test Sensitivity") +
+                                    scale_x_continuous(breaks = seq(-5, 10, 1)) +
                                     theme(#legend.position = c(0.85, 0.8),
                                           legend.text = element_text(size = 8),
                                           legend.key.height = unit(0.25, 'cm'),
@@ -657,13 +676,18 @@ knitr::kable(av_med_stats_by_var, col.names = c("Sample Variance",
                                                  "Median # Rejects (Pooled)"), 
              escape = FALSE)
 
+```
 
+### Item C
+
+```{r, echo = FALSE, fig.dim = c(7, 3)}
 av_med_stats_by_nulln %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
                           ggplot() + geom_line(aes(x = n1, y = calc, color = stat)) + 
                                      geom_point(aes(x = n1, y = calc, color = stat)) + 
                                      xlab("Null Sample Size") +
                                      ylab("Null Reject Statistics") +
-                                     ggtitle("Affect of Null Sample Size on Test Sensitivity") +
+                                     ggtitle("Effect of Null Sample Size on Test Sensitivity") +
+                                     scale_x_continuous(breaks = seq(10, 80, 10)) + 
                                      theme(#legend.position = c(0.85, 0.65),
                                            legend.text = element_text(size = 8),
                                            legend.key.height = unit(0.25, 'cm'),
@@ -683,13 +707,18 @@ knitr::kable(av_med_stats_by_nulln, col.names = c("Null Sample Size",
                                                  "Median # Rejects (Pooled)"), 
              escape = FALSE)
 
+```
 
+### Item D
+
+```{r, echo = FALSE, fig.dim = c(7, 3)}
 av_med_stats_by_altn %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
                           ggplot() + geom_line(aes(x = n2, y = calc, color = stat)) + 
                                      geom_point(aes(x = n2, y = calc, color = stat)) + 
                                      xlab("Alternative Sample Size") +
                                      ylab("Null Reject Statistics") + 
-                                     ggtitle("Affect of Alternative Sample Size on Test Sensitivity") +
+                                     ggtitle("Effect of Alternative Sample Size on Test Sensitivity") +
+                                     scale_x_continuous(breaks = seq(10, 80, 10)) + 
                                      theme(#legend.position = c(0.85, 0.65),
                                            legend.text = element_text(size = 8),
                                            legend.key.height = unit(0.25, 'cm'),
@@ -708,12 +737,19 @@ knitr::kable(av_med_stats_by_altn, col.names = c("Alternative Sample Size",
                                                  "Median # Rejects (Pooled)"), 
              escape = FALSE)
 
+```
+
+### Item E
+
+```{r, echo = FALSE, fig.dim = c(7, 3)}
+
 av_med_stats_by_comn %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
                           ggplot() + geom_line(aes(x = comn, y = calc, color = stat)) + 
                                      geom_point(aes(x = comn, y = calc, color = stat)) + 
                                      xlab("Total Sample Size") +
                                      ylab("Null Reject Statistics") + 
-                                     ggtitle("Affect of Total Sample Size on Test Sensitivity") +
+                                     ggtitle("Effect of Total Sample Size on Test Sensitivity") +
+                                     scale_x_continuous(breaks = seq(10, 150, 10)) + 
                                      theme(#legend.position = c(0.85, 0.7),
                                            legend.text = element_text(size = 8),
                                            legend.key.height = unit(0.25, 'cm'),
@@ -735,7 +771,7 @@ knitr::kable(av_med_stats_by_comn, col.names = c("Combined Sample Size",
 
 \newpage
 
-## Appendix IV: Code
+## Appendix V: Code
 ```{r, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
 ```
 
