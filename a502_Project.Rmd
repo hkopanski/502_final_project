@@ -221,15 +221,15 @@ For this part of the analysis we assumed equal variances, thereby allowing us to
 
 Additionally, the 95% confidence interval was calculated under the pooled variance assumption. The observed interval is `r CI_pooled[1]` to `r CI_pooled[2]`. One can see that zero does not fall into this interval. Both calculations (p-value and 95% confidence interval) provides enough evidence to allow for the rejection of the null hypothesis. In other words, at an  level of 0.05, there is significant evidence to suggest this group of smokers and nonsmokers have a different range of systolic blood pressure when using pooled variance.
 
-Repeating the same approach as before but now assuming unequal population variances. In this case, the computed sample variances of the two groups were `r round(var_smoker, 1)` for smokers and `r round(var_nonsmoker, 1)` for nonsmokers. Using equation 3 from Appendix 1, an observed t value of `r round(t_obs_2, 1)` was obtained. Comparing that the two-sided $\alpha$ of `r round(t_stat_2, 2)` with `r dof_2` degrees of freedom (as computed using the Satterthwaite Approximation; see Appendix I: Equation 4), the observed t value was less than the chosen $\alpha$ value of 0.05, as in the case of pooled sample variance.
+Repeating the same approach as before, we then assumed unequal population variances. In this case, the computed sample variances of the two groups were `r round(var_smoker, 1)` for smokers and `r round(var_nonsmoker, 1)` for nonsmokers. Using equation 3 from Appendix 1, an observed t value of `r round(t_obs_2, 1)` was obtained. Comparing that the two-sided $\alpha$ of `r round(t_stat_2, 2)` with `r dof_2` degrees of freedom (as computed using the Satterthwaite Approximation; see Appendix I: Equation 4), the observed t value was less than the chosen $\alpha$ value of 0.05, as in the case of pooled sample variance.
 
-Furthermore, the 95% confidence interval in the non pooled case was found to be `r CI_nonpooled[1]` to `r CI_nonpooled[2]`. It can be noted that zero is absent from this range, as in the case of the pooled sample variance. In this second scenario, there is sufficient evidence to reject the null hypothesis and to support the alternative at an $\alpha$ level of 0.05.
+Furthermore, the 95% confidence interval in the unequal variance case was found to be `r CI_nonpooled[1]` to `r CI_nonpooled[2]`. It can be noted that zero is absent from this range, as in the case of the pooled sample variance. In this second scenario, there is sufficient evidence to reject the null hypothesis and to support the alternative at an $\alpha$ level of 0.05.
 
 We have shown that there is sufficient evidence to support the systolic blood pressure between smokers and nonsmokers is different. This statement holds true in all cases described in this paper. It should be noted, that while the observed systolic blood pressure values vary between smokers and non smokers, we do not know the underlying cause based on the provided data.
 
 ### Test Preference
 
-Here, both tests allow us to reject the null hypothesis, so either one could be useful. In this case, we must allow the computed statistics to dictate which test we ought to prefer. The standard deviation (pooled variance) was calculated from the denominator of Equation 2 (see Appendix I) which returned a value of 3.01. Similarly, the standard deviation (unequal variance) was calculated from the denominator of Equation 3 which returned a value of 9.99. We want to have data that is as consistent as possible, in other words, with the smallest spread, i.e., variance; therefore, we prefer the test with pooled variance.
+Here, both tests allow us to reject the null hypothesis, so either one could be useful. In this case, we must allow the computed statistics to dictate which test we ought to prefer. The standard deviation (pooled variance) was calculated from the denominator of Equation 2 (see Appendix I) which returned a value of `r round(p_sample_var_w, 2)`. Similarly, the standard deviation (unequal variance) was calculated from the denominator of Equation 3 which returned a value of `r round(np_sample_var_2, 2)`. We want to have data that is as consistent as possible, in other words, with the smallest spread, i.e., variance; therefore, we prefer the test with pooled variance.
 
 
 \newpage
@@ -242,10 +242,10 @@ In Part I, we were able to see how hypothesis testing allowed us to produce enou
 
 ### Power of Hypothesis Testing
 
-It is important to briefly discuss the concept of power, and by extension error types, in hypothesis testing. Power describes the probability of not committing a Type II error, which is to not reject the null hypothesis when there was in actuality enough evidence to do so. The probability of a Type II error is represented by $\beta$. Power is the complement to that probability (1 - $\beta$) and can be thought of as test sensitivity. The more powerful the test the more sensitive it is to differences between distributions. The value of $\beta$ is the portion of the alternate distribution that is within the null hypothesis non rejection region limits. Below are a number of plots to help depict this concept. In each of the plots the shaded red is the null distribution and its location stays constant (mean = 3). The dark tails represent the rejection region of the null distribution and correspond to the size of $\alpha$ (in this case 2.5% on each side). $\alpha$ also indicates the probability of committing a Type I error, which is rejecting the null hypothesis incorrectly. The outline distribution represents the "true" alternative distribution. Within that distribution is the shaded light blue region which is equal to $\beta$. It can be seen that as the difference between the two distributions shrinks the value of $\beta$ increases and the power shrinks. Power reaches minimum and $\beta$ reaches maximum when the two distributions are the same. It should be noted that unless the null and alternative distributions are exact copies of one another, there is always a non zero probability of committing a Type I error.
+It is important to briefly discuss the concept of power and, by extension, error types in hypothesis testing. Power describes the probability of not committing a Type II error, which is to not reject the null hypothesis when there was, in actuality, enough evidence to do so. The probability of a Type II error is represented by $\beta$. Power is the complement to that probability (1 - $\beta$) and can be thought of as “test sensitivity.” The more powerful the test, the more sensitive it is to differences between distributions. The value of $\beta$ is the portion of the alternative distribution that is within the null hypothesis non-rejection region limits. Below are a number of plots to help depict this concept. In each of the plots, the shaded red is the null distribution and its location stays constant (mean = 3). The dark tails represent the rejection region of the null distribution and correspond to the size of $\alpha$ (in this case 2.5% on each side); $\alpha$ also indicates the probability of committing a Type I error, which is rejecting the null hypothesis incorrectly. The outline distribution represents the "true" alternative distribution. Within that distribution is the shaded light blue region which is equal to $\beta$. One can see that as the difference between the two distributions shrinks, the value of $\beta$ increases and the power shrinks. Power reaches minimum and $\beta$ reaches maximum when the two distributions are the same. It should be noted that unless the null and alternative distributions are exact copies of one another, there is always a nonzero probability of committing a Type I error.
 
 
-```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.dim = c(6, 2) ,fig.align = 'center'}
+```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.dim = c(6, 2) ,fig.align = 'center', cache = TRUE}
 
 #Part II
 #Introduction
@@ -305,7 +305,7 @@ do.call(grid.arrange, c(plot_list, ncol = 3, heights = 0.5))
 
 ### Simulation Study
 
-Multiple scenarios were simulated by creating 2 normally distributed data sets of various mean, variances, and sample sizes. Each scenario was repeated a thousand times. For each of those repeats a hypothesis test was conducted and the number of times the null hypothesis was rejected was recorded (see Appendix III for results). All hypothesis testing was using pooled and unequal variance, regardless of the actual values of variance. 
+Multiple scenarios were simulated by creating two normally distributed data sets of various means, variances, and sample sizes. Each scenario was repeated a thousand times. For each of those repeats, a hypothesis test was conducted and the number of times the null hypothesis was rejected was recorded (see Appendix III for results.) All hypothesis testing used both pooled and unequal variance, regardless of the actual values of variance. 
 
 The following table includes the values of each parameter used in the simulation:
 
@@ -318,7 +318,7 @@ The following table includes the values of each parameter used in the simulation
 |$\sigma_{2}^{2}$|1|
 |$n_{2}$|10, 30, 70|
 
-```{r, echo = FALSE, message=FALSE, warning=FALSE}
+```{r, echo = FALSE, message=FALSE, warning=FALSE, cache=TRUE}
 #Part II
 set.seed(1)
 
@@ -469,9 +469,9 @@ av_med_stats_by_comn <-
 
 ### Observations
 
-It was noted that the smaller difference between the alternative and null mean values were, the less likely the null hypothesis was rejected (see plot below and for more detail Appendix IV Item A). Larger values of variance also reduced the number of rejected null hypothesis (see Appendix IV Item B). In both cases, the more overlap between the two distributions, the less powerful the test. It was observed that increasing the sample size increased power (see Appendix IV Item C, D, and E). For a specific example, we can look at test cases #9 and #129 where $\mu_{1}$ = 6, $\mu_{2}$ = 5, $\sigma^{2}_{1}$ = 4 and $\sigma^{2}_{2}$ = 1. The two cases differed in sample size where $n_{9}$ = 10 and $n_{129}$ = 70. This increase in sample size resulted in almost a 4 fold increase in power (271 vs 951 (pooled) or 265 vs 948 (unequal) rejected nulls). It stands to reason that large variances and small deltas in mean can be mitigated by increasing the sample size accordingly. 
+It was noted that the smaller difference between the alternative and null mean values were, the less likely the null hypothesis was rejected (see plot below and for more detail Appendix IV Item A). Larger values of variance also reduced the number of rejected null hypotheses (see Appendix IV Item B). In both cases, the more overlap between the two distributions, the less powerful the test. It was observed that increasing the sample size increased power (see Appendix IV Item C, D, and E). For a specific example, we can look at test cases #9 and #129 where $\mu_{1}$ = 6, $\mu_{2}$ = 5, $\sigma^{2}_{1}$ = 4 and $\sigma^{2}_{2}$ = 1. The two cases differed in sample size where $n_{9}$ = 10 and $n_{129}$ = 70.This increase in sample size resulted in an almost fourfold increase in power [271 vs 951 (pooled) or 265 vs 948 (unequal) rejected nulls]. It stands to reason that large variances and small deltas in mean can be mitigated by increasing the sample size accordingly. 
 
-```{r, echo = FALSE, fig.dim = c(5, 2) , fig.align = 'center'}
+```{r, echo = FALSE, fig.dim = c(5.5, 2.5) , fig.align = 'center'}
 av_med_stats_by_diff %>% gather(key = "stat", value = "calc", avg_up:med_po) %>% 
                          ggplot() + geom_line(aes(x = diff, y = calc, color = stat)) + 
                                     geom_point(aes(x = diff, y = calc, color = stat)) + 
@@ -488,7 +488,20 @@ av_med_stats_by_diff %>% gather(key = "stat", value = "calc", avg_up:med_po) %>%
                                           title = element_text(size = 8),
                                           legend.text = element_text(size = 6),
                                           legend.key.height = unit(0.25, 'cm'),
-                                          legend.key.width = unit(0.25, 'cm'))
+                                          legend.key.width = unit(0.25, 'cm')) +
+                                    annotate("segment", 
+                                             x = c(-1.1, -1.1, 0.25), xend = c(-1.1, -1.1, 0.25), 
+                                             y = c(0, 625, 0), yend = c(625, 1000, 50), 
+                                             colour = "blue", 
+                                             size = 0.5, arrow = arrow(ends = "both", 
+                                                                       length = unit(0.1, "cm"),
+                                                                       angle = 90)) + 
+                                    geom_text(label = "Power", x = -1.75, y = 350, 
+                                              size = 2.5, color = "blue") +
+                                    geom_text(label = "Type I Error", x = 1.1, y = 25, 
+                                              size = 2.5, color = "blue") +
+                                    geom_text(label = "Type II\n Error", x = -1.75, y = 825, 
+                                              size = 2.5, color = "blue")
 ```
 
 Type I errors can be clearly observed in the simulated data. All test cases where $\Delta\mu$ was zero, roughly 50 out of the 1000 simulations resulted in rejected null hypotheses (see Appendix IV Item A table). These erroneous results, in roughly 5% of the cases, are due to the difference in variance between the distributions. That percentage value closely matches that of $\alpha$.
@@ -497,14 +510,20 @@ One final observation, for each of the test cases (1 - $\beta$) was calculated u
 
 ```{r, echo = FALSE}
 
-pow_tab_9a <- test_results[[9]] %>% pull(Power) %>% summary() %>% unname() %>% matrix(ncol = 1)
-pow_tab_9b <- test_results2[[9]] %>% pull(Power) %>% summary() %>% unname() %>% matrix(ncol = 1)
-pow_tab_129a <- test_results[[129]] %>% pull(Power) %>% summary() %>% unname() %>% matrix(ncol = 1)
-pow_tab_129b <- test_results2[[129]] %>% pull(Power) %>% summary() %>% unname() %>% matrix(ncol = 1)
+pow_tab_9a <- 
+    test_results[[9]] %>% pull(Power) %>% summary() %>% unname() %>% matrix(ncol = 1)
+pow_tab_9b <- 
+    test_results2[[9]] %>% pull(Power) %>% summary() %>% unname() %>% matrix(ncol = 1)
+pow_tab_129a <- 
+    test_results[[129]] %>% pull(Power) %>% summary() %>% unname() %>% matrix(ncol = 1)
+pow_tab_129b <- 
+    test_results2[[129]] %>% pull(Power) %>% summary() %>% unname() %>% matrix(ncol = 1)
 
 d <- cbind(pow_tab_9a, pow_tab_9b, pow_tab_129a, pow_tab_129b)[2:5,]
 
-colnames(d) = c("Test #9 (pooled)", "Test #9 (unequal)", "Test #129 (pooled)", "Test #129 (unequal)")
+colnames(d) = c("Test #9 (pooled)", "Test #9 (unequal)", 
+                "Test #129 (pooled)", "Test #129 (unequal)")
+
 rownames(d) = c("1st Quartile", "Median", "Mean", "3rd Quartile")
 
 knitr::kable(d)
@@ -523,7 +542,8 @@ After performing 1,000 trials for each of 135 different scenarios, the data show
 
 ```{r echo = FALSE}
 cnames <- c("Halid","Justin")
-rnames <- c("template creation", "code", "code review", "write up", "editing", "formatting", "discussion", "calculation verification")
+rnames <- c("template creation", "code", "code review", "write up", "editing", 
+            "formatting", "discussion", "calculation verification")
 
 cont<- rbind(
 c("75%","25%"), 
