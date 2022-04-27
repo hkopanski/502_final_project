@@ -1,0 +1,524 @@
+---
+title: "ST502 Project"
+author: "Halid Kopanski and Justin Feathers"
+#geometry: "left = 1.5 cm, right = 1.5 cm, top = 1.25 cm, bottom = 2 cm"
+output:
+    pdf_document: default
+    word_document: default
+---
+\newpage
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#Use required packages
+library(tidyverse) #for plots and data manipulation
+library(cowplot) #aligning plots
+library(gridExtra)
+library(scales)
+
+df_data <- read_csv("framingham_data.csv") # Read in data
+```
+
+## Part I
+
+### Framingham Heart Study
+
+The Framingham data set contains the diastolic blood pressure of `r nrow(df_data)` smokers and nonsmokers. For this study we will assume the following:
+
+H~0~: $\mu$~1~ - $\mu$~2~ = 0
+
+H~A~: $\mu$~1~ - $\mu$~2~ $\ne$ 0
+
+The null hypothesis being there is no difference in the blood pressure between smokers and non smokers. We believe that there is a difference and this paper will prove if we have enough evidence to reject the null hypothesis.
+
+```{r, echo = FALSE, fig.dim = c(7, 2.5), fig.align = 'center'}
+df_data$index <- seq(nrow(df_data)) # Add an index column
+
+#df_data %>% summary # Summarize Data
+
+# Split data into smoker and nonsmoker
+df_smoker <- df_data %>% filter(currentSmoker == 1)
+df_nonsmoker <- df_data %>% filter(currentSmoker == 0)
+
+#Create a sample variance function to ensure proper calculation
+sample_variance <- function(x, sampling = TRUE){
+    if (sampling == TRUE){
+        sum((x - mean(x))^2) / (length(x) - 1)
+    } else if(sampling == FALSE) {
+        sum((x - mean(x))^2) / (length(x))
+    }
+}
+#Create pooled sample variance function 
+f_pooled_variance <- function(x, y){
+    ((length(x) - 1) * sample_variance(x) + 
+     (length(y) - 1) * sample_variance(y)) / 
+    (length(x) + length(y) - 2)
+}
+
+# Skewness function 
+skew_function <- function(x){
+    mean((x - mean(x))^3) / sqrt(sample_variance(x))^3
+}
+
+# kurtosis function
+kurt_function <- function(x){
+    mean((x - mean(x))^4) / sqrt(sample_variance(x))^4
+}
+
+# Create a Satterthawaite Approximation Function
+
+satterth <- function(s1, s2, n1, n2){
+    term1 <- s1/n1
+    term2 <- s2/n2
+    nu <- (term1 + term2)^2 / ((term1^2/(n1 - 1)) + (term2^2/(n2 - 1)))
+    return(floor(nu))
+}
+
+
+#Plot and compare split data
+
+#options(repr.plot.width = 6, repr.plot.height = 4, repr.plot.res = 150)
+
+plot_colors <- c("#001427","#708d81","#f4d58d","#bf0603","#8d0801")
+y_limits <- c(0, 0.0225)
+
+total_data <- ggplot(df_data) + geom_density(aes(sysBP), 
+                                             fill = plot_colors[1],
+                                             alpha = 0.6) +
+                       ylim(y_limits) + ylab("Density") + xlab("")
+
+sep_data <- ggplot() + geom_density(data = df_smoker, aes(sysBP), 
+                                    fill = plot_colors[3], alpha = 0.6) + 
+                       geom_density(data = df_nonsmoker, aes(sysBP), 
+                                    fill = plot_colors[5], alpha = 0.6) +
+                       ylim(y_limits) + ylab("") + xlab("Systolic Blood Pressure")
+
+plot_3 <- ggplot() + geom_density(data = df_smoker, aes(sysBP, 
+                                    fill = plot_colors[3]), alpha = 0.5) + 
+                       geom_density(data = df_data, aes(sysBP, 
+                                    fill = plot_colors[1]), alpha = 0.5) +
+                       geom_density(data = df_nonsmoker, aes(sysBP, 
+                                    fill = plot_colors[5]), alpha = 0.5) +
+                       ylim(y_limits) + ylab("") + xlab("") + 
+                       scale_fill_manual("",
+                                         values = plot_colors[c(1, 5, 3)], 
+                                         labels = c("Total", "Non Smoker", "Smoker")) +
+                       theme(legend.position = c(0.8, 0.9),
+                             legend.text = element_text(size = 6),
+                             legend.key.height = unit(0.25, 'cm'),
+                             legend.key.width = unit(0.25, 'cm'))
+
+#plot_grid(total_data, sep_data, plot_3, align = 'vh', 
+          #hjust = -1,nrow = 2, ncol = 2)
+
+data_kurtosis <- kurt_function(df_data$sysBP)
+data_skew <- skew_function(df_data$sysBP)
+data_IQR <- as.numeric(quantile(df_data$sysBP, probs = 0.75)) - 
+       as.numeric(quantile(df_data$sysBP, probs = 0.25))
+data_MAD <- median(abs(df_data$sysBP - median(df_data$sysBP)))
+data_samVar <- sample_variance(df_data$sysBP)
+
+eIQR <- data_IQR / 1.35
+eMAD <- data_MAD / 0.675
+
+# Q-Q Plot
+
+data_qqplot <- 
+ggplot(df_data, aes(sample = sysBP)) + 
+stat_qq(shape = 1) + stat_qq_line() + 
+ggtitle("Normal Q-Q Plot for Blood Pressure Data") + 
+xlab("Theoretical Quantiles") +
+ylab("Sample Quantiles")
+```
+
+### Normality of Data
+
+Plotting the density of total data (see Appendix I: Figure 1A), we can that it closely follows a normal distribution, Density plots of the split data exhibit similar forms (see Appendix I: Figure 1B). We can also calculate the kurtosis and the skew of the data, which are `r c(round(data_kurtosis, 3), round(data_skew, 3))` for kurtosis and skew respectively, and see that they are quite close to values typically found in normally distributed data. Additionally, the calculated values of sample standard deviation, $\frac{IQR}{1.35}$, and $\frac{MAD}{0.675}$ are `r round(sqrt(data_samVar), 2)`, `r round(eIQR, 2)`, and `r round(eMAD, 2)`. The similarities between the three values indicate that the data is not influenced by outliers. Therefore, we will assume the data and the subsequent split data to be normal. 
+
+
+### Statistical Analysis
+
+In the first analysis we will be assuming equal variances, thereby allowing us to use pooled sample variance (see Appendix I: Equation 1).
+
+```{r, echo = FALSE}
+
+# Common values for analysis
+
+alpha <- 0.05
+
+mu_smoker <- mean(df_smoker$sysBP)
+var_smoker <- sample_variance(df_smoker$sysBP)
+n_smoker <- length(df_smoker$sysBP)
+
+mu_nonsmoker <- mean(df_nonsmoker$sysBP)
+var_nonsmoker <- sample_variance(df_nonsmoker$sysBP)
+n_nonsmoker <- length(df_nonsmoker$sysBP)
+
+# Two Sample T-test - Pooled Sample Variance - P-value
+
+dof_1 <- (n_smoker + n_nonsmoker - 2)
+
+p_sample_var_1 <- f_pooled_variance(df_smoker$sysBP, 
+                                    df_nonsmoker$sysBP)
+
+
+t_obs_1 <- (mu_smoker - mu_nonsmoker) / (sqrt(p_sample_var_1) * sqrt(1/n_smoker + 1/n_nonsmoker))
+
+t_stat_1 <- qt(alpha / 2, dof_1)
+
+p_value_obs_1 <- dt(t_obs_1, dof_1)
+
+#Two Sample T-test - Difference Variance Sample Variance - P-value
+
+dof_2 <- satterth(var_smoker, var_nonsmoker, n_smoker, n_nonsmoker)
+
+np_sample_var_2 <- (var_nonsmoker/n_smoker + var_nonsmoker/n_nonsmoker)
+
+t_obs_2 <- (mu_smoker - mu_nonsmoker) / (sqrt(var_nonsmoker/n_smoker + var_nonsmoker/n_nonsmoker))
+
+t_stat_2 <- qt(alpha / 2, dof_2)
+
+p_value_obs_2 <- dt(t_obs_2, dof_2)
+
+# Confidence Limits
+
+diff_mu <- mu_smoker - mu_nonsmoker
+
+#Pooled Sample variance
+
+CL_pooled <- t_stat_1 * (sqrt(p_sample_var_1/n_smoker + p_sample_var_1/n_nonsmoker))
+
+#Non pooled Sample variance
+
+CL_nonpooled <- t_stat_2 * (sqrt(var_nonsmoker/n_smoker + var_nonsmoker/n_nonsmoker))
+
+CI_pooled <- round(c(diff_mu + CL_pooled, diff_mu - CL_pooled), 2)
+
+CI_nonpooled <-round(c(diff_mu + CL_nonpooled, diff_mu - CL_nonpooled), 2)
+
+#Power Calculation assuming delta means is the true delta
+
+cv_lo_p <- qnorm(alpha / 2, 0, sqrt(p_sample_var_1/n_smoker + 
+                                      p_sample_var_1/n_nonsmoker))
+cv_hi_p <- qnorm(1 - alpha / 2, 0, sqrt(p_sample_var_1/n_smoker + 
+                                          p_sample_var_1/n_nonsmoker))
+
+power1 <- pnorm(cv_lo_p, (mu_smoker - mu_nonsmoker), 
+                sqrt(p_sample_var_1/n_smoker + p_sample_var_1/n_nonsmoker))
+power2 <- 1 - pnorm(cv_hi_p, (mu_smoker - mu_nonsmoker), 
+                    sqrt(p_sample_var_1/n_smoker + p_sample_var_1/n_nonsmoker))
+
+power_pooled <- sum(power1, power2)
+
+cv_lo_non <- qnorm(alpha / 2, 0, 
+               (sqrt(var_nonsmoker/n_smoker + var_nonsmoker/n_nonsmoker)))
+cv_hi_non <- qnorm(1 - alpha / 2, 0, 
+               (sqrt(var_nonsmoker/n_smoker + var_nonsmoker/n_nonsmoker)))
+
+power1 <- pnorm(cv_lo_non, (mu_smoker - mu_nonsmoker), 
+                (sqrt(var_nonsmoker/n_smoker + var_nonsmoker/n_nonsmoker)))
+power2 <- 1 - pnorm(cv_hi_non, (mu_smoker - mu_nonsmoker), 
+                    (sqrt(var_nonsmoker/n_smoker + var_nonsmoker/n_nonsmoker)))
+
+power_nonpooled <- sum(power1, power2)
+
+```
+The pooled sample variance of the data is `r round(p_sample_var_1, 1)` using a degree of freedom value `r dof_1`. In this case, we reject the null hypothesis because the calculated p value, `r round(p_value_obs_1, 4)`, is smaller than the chosen $\alpha$ value of 0.05. In terms of t values, our observed t value of `r round(t_obs_1, 2)` is smaller than the t value, `r round(t_stat_1, 2)` for a two sided $\alpha$ of 0.05. 
+
+When computing the observed t value using the assumption that the population variances are not equivalent (variance smoker is `r round(var_smoker, 1)` and variance nonsmoker is `r round(var_nonsmoker, 1)`), a value of `r round(t_obs_2, 1)` is obtained.  Comparing that the two sided $\alpha$ of `r round(t_stat_2, 2)` with `r dof_2` degrees of freedom (as computed using the Satterthwaite Approximation see Appendix I: Equation 4). The observed t value is less than the chosen $\alpha$ value of 0.05. In case, there is sufficient evidence to reject the null hypothesis in favor of the alternative. 
+
+The observed 95% confidence intervals are `r CI_pooled[1]` to `r CI_pooled[2]` for pooled sample variance and `r CI_nonpooled[1]` to `r CI_nonpooled[2]` for non pooled sample variance. It can be seen that 0 does not fall into the 95% confidence interval in either case. Therefore the null hypothesis can be rejected.
+
+In all three case, there is sufficient evidence to reject the null hypothesis and to support the alternative at an $\alpha$ level of 0.05.
+
+
+\newpage
+
+## Part II
+
+### Introduction
+
+In Part I we were able to see how hypothesis testing allowed to find enough evidence to challenge the "status quo" argument that smoking has no affect on the blood pressure of a person. What we found, through a number of robust statistical methods, that the difference in means, calculated to be `r mu_nonsmoker - mu_smoker`, was significant to not have arisen by chance. That within an $\alpha$ of 5%, we are confident that the two groups do exhibit measurable differences. In the following sections, we will explore, through simulated data, the concept of randomness in data and what steps we can take to mitigate that randomness. All simulated date will be generated using the built in rnorm() function in R. 
+
+### Power of Hypothesis Testing
+
+It is important to briefly discuss the concept of power in hypothesis testing. Power describes the probability of not committing a Type II error, which is to not reject the null hypothesis when there was in actuality enough evidence to do so. The probability of a Type II error is represented by $\beta$. Power is the complement to that probability (1 - $\beta$). The value of $\beta$ is the portion of the alternate distribution that is within the null hypothesis non rejection region limits. Below are a number of plots to help depict this concept. In each of the plots the shaded red is the null distribution and its location stays constant (mean = 3). The dark tails represent the rejection region of the null distribution. The outline distribution represents the "true" alternative distribution. Within that distribution is the shaded light blue region which is equal to $\beta$. It can be seen that as the difference between the two distributions shrinks the value of $\beta$ increases and the power shrinks. Power reaches minimum and $\beta$ reaches maximum when the two distributions are the same. 
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.dim = c(6, 4), fig.align = 'center'}
+
+#Part II
+#Introduction
+
+options(repr.plot.width = 12, repr.plot.height = 5, repr.plot.res = 150)
+set.seed(100)
+
+null_mean <- 3
+alt_means <- c(0, 1, 3, 5)
+plot_list <- list()
+
+#plot_colors <- c("#072ac8","#1e96fc","#a2d6f9","#fcf300","#ffc600")
+
+for(i in 1:length(alt_means)){
+    
+    sim1 <- rnorm(5000, null_mean, sqrt(1))
+    sim2 <- rnorm(5000, alt_means[i], sqrt(1))
+
+    alpha1 <- qnorm(0.025, null_mean, sqrt(1)) 
+    alpha2 <- qnorm(0.975, null_mean, sqrt(1))
+
+    df_set <- tibble("H0" = sim1, "HA" = sim2)
+    
+    title_string <- sprintf("Difference in Means %i", (alt_means[i] - null_mean))
+
+    plot_list[[i]]  <-
+    ggplot(data = df_set) + geom_density(aes(H0), alpha = 0.5, fill = plot_colors[5]) + 
+                            geom_area(
+                                aes(x = stage(H0, after_scale = oob_censor(x, c(-Inf, alpha1)
+                                                                          )
+                                             )
+                                   ),
+                                stat = "density", fill = plot_colors[1]
+                                 ) +
+                            geom_area(
+                                aes(x = stage(H0, after_scale = oob_censor(x, c(alpha2, Inf)
+                                                                          )
+                                             )
+                                   ),
+                                stat = "density", fill = plot_colors[1]
+                                     ) +
+                            geom_density(aes(HA), alpha = 0.5) + 
+                            geom_area(
+                                aes(x = stage(HA, after_scale = oob_censor(x, c(alpha1, alpha2)
+                                                                          )
+                                             )
+                                   ),
+                                stat = "density", fill = plot_colors[2], alpha = 0.5
+                                     ) +
+                            xlim(-2, 8) + xlab("") + ylab("") + ggtitle(title_string)
+    
+                                }
+
+do.call(grid.arrange, plot_list)
+```
+
+### Simulation Study
+
+Below, various scenarios were simulated by creating 2 normally distributed data sets of various mean, variances, and sample sizes. Each scenario was repeated a thousand times. For each of those repeats a hypothesis test was conducted and the number of times the null hypothesis was rejected was recorded. See Appendix III for results. All hypothesis testing was using pooled and unpooled variance, regardless of the actual values of variance. 
+
+The following table includes the values of each parameter used in the simulation:
+
+|Parameter|Possible Values|
+|-|-|
+|$\mu_{0}$|0, 4, 5, 6, 10|
+|$\sigma_{0}^{2}$|1, 4, 9|
+|$n_{0}$|10, 30, 70|
+|$\mu_{A}$|5|
+|$\sigma_{A}^{2}$|1|
+|$n_{A}$|10, 30, 70|
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+#Part II
+set.seed(1)
+
+alpha <- 0.05
+
+test_function <- function (x, y, pooled = FALSE){
+
+    mu_1 <- mean(x)
+    var_1 <- sample_variance(x, sampling = TRUE)
+    
+    mu_2 <- mean(y)
+    var_2 <- sample_variance(y, sampling = TRUE)
+    
+    #Calculate the pooled sample variance
+    pooled_sample <- ((length(x) - 1) * var_1 + 
+                          (length(y) - 1) * var_2) / (length(x) + length(y) - 2)
+    
+    #calculate the observed t statistic
+    if (pooled == TRUE){
+        
+        cal_sigma <- (sqrt(pooled_sample/length(x) + pooled_sample/length(y)))
+        
+        ttest <- (mu_1 - mu_2) / cal_sigma
+        dof <- length(x) + length(y) - 2 #Determine degrees of freedom
+        
+        } else {
+        
+        cal_sigma <- (sqrt(var_1/length(x) + var_2/length(y)))
+        
+        ttest <- (mu_1 - mu_2) / cal_sigma
+        dof <- satterth(var_1, var_2, length(x), length(y))
+    }
+    
+    # Determine whether or not the null hypothesis 
+    # can be rejected (1 = rejected, 0 = not rejected)
+    verdict <- !between(ttest, qt(alpha / 2, dof), qt(1 - alpha / 2, dof))
+    
+    #Power calculation assuming calculated difference in means is Ha 
+    cv_lo <- qnorm(alpha / 2, 0, cal_sigma)
+    cv_hi <- qnorm(1 - alpha / 2, 0, cal_sigma)
+    
+    power1 <- pnorm(cv_lo, (mu_1 - mu_2), cal_sigma)
+    power2 <- 1 - pnorm(cv_hi, (mu_1 - mu_2), cal_sigma)
+    
+    power <- sum(power1, power2)
+    
+    #Return calculated values
+    return(c(mu_1, var_1, mu_2, var_2, ttest, cal_sigma, dof, verdict, power))
+}
+
+
+
+mu1 <- c(0, 4, 5, 6, 10)
+var1 <- c(1, 4, 9)
+n1 <- c(10, 30, 70)
+
+mu2 <- 5
+var2 <- 1
+n2 <- c(10, 30, 70)
+
+sim_test <- function(x_mu, x_var, x_n, y_mu, y_var, y_n, pooled = TRUE){
+    
+    sim_data_results <- matrix(rep(0, 9), ncol = 9)
+    
+    for (i in 1:1000){
+        
+        sim_set1 <- rnorm(x_n, x_mu, sqrt(x_var))
+        sim_set2 <- rnorm(y_n, y_mu, sqrt(y_var))
+        
+        sim_data_results <- rbind(sim_data_results, 
+                                  test_function(sim_set1, sim_set2, pooled))
+        
+        #print(sim_data_results)
+    }
+    
+    df_sim_data <- data.frame(sim_data_results[2 : nrow(sim_data_results),])
+    colnames(df_sim_data) = c("Null Mean", "Null Variance", "Alternate Mean", 
+                              "Alternate Variance", "T statistic", 
+                              "Calculated Variance", "DoF", "Null Reject", 
+                              "Power")
+    return(df_sim_data)
+}
+
+# HA: mean = 5, var = 1
+df_combo <- expand.grid(mu1, var1, n1, mu2, var2, n2)
+df_combo2 <- tibble(cbind(1:nrow(df_combo), df_combo, 
+                          matrix(rep(0, 2 * nrow(df_combo)), ncol = 2)))
+colnames(df_combo2) <- c("Test_Case", "mu1", "var1", "n1", "mu2", "var2", 
+                         "n2", "Test_Results_up", "Test_Results_po")
+
+test_results <- list()
+test_results2 <- list()
+
+for (i in 1:nrow(df_combo)){
+    test_results[[i]] <- do.call(sim_test, 
+                                 as.list(as.numeric(df_combo[i,])))
+    test_results2[[i]] <- do.call(sim_test, 
+                                  as.list(as.numeric(c(df_combo[i,], 
+                                                       pooled = TRUE))))
+    df_combo2[i, 8] <- sum(as.data.frame(test_results[i])[,8])
+    df_combo2[i, 9] <- sum(as.data.frame(test_results2[i])[,8])    
+    }
+
+df_combo2 <- df_combo2 %>% mutate(diff = mu1 - mu2)
+#df_combo2 %>%  head()
+```
+
+It was noted that the smaller difference between the alternative and null mean values were, the less likely the null hypothesis was rejected. Larger values of variance also reduced the number of rejected null hypothesis. In both cases, the more overlap between the two distributions, the less powerful the test. One way that can increase the power of the t-test is to increase the sample size. For a specific example, we can look at test cases #10 and #129. In both cases the distribution means were 6 and 5 for the null and alternative hypotheses respectively, along with variances of 1 for both distributions. The only difference between the two cases was the sample size ($n_{10}$ = 10 and $n_{129}$ = 70). This increase in sample size resulted in almost a 6 fold increase in power (169 vs 958 rejected nulls). Test cases 69 and 114 use different combinations of, but lower than 70, sample sizes than the aforementioned two. While they exhibited increased signs of power, they did not get as high as test case 129. It stands to reason that large variances and small deltas in mean can be mitigated by increasing the sample size accordingly. 
+
+\newpage
+
+## Appendix I: Equations and Figures
+
+## Figures
+```{r, echo = FALSE, fig.dim = c(7, 2.5), fig.align = 'center'}
+# Plotting
+options(repr.plot.width = 6, repr.plot.height = 4, repr.plot.res = 150)
+
+plot_grid(total_data, sep_data, plot_3, align = 'vh', 
+          hjust = -1,nrow = 1, ncol = 3, labels = c("A", "B", "C"))
+```
+
+### Figure 1: Data plots
+
+```{r, echo = FALSE, fig.dim = c(5, 3)}
+data_qqplot + theme_bw()
+```
+
+### Figure 2: Q-Q Plot
+
+---
+
+## Equations:
+
+\begingroup
+\fontsize{16}{16}\selectfont
+
+### Equation 1: Pooled Sample Variance:
+$$
+S_{p}^{2} = \frac{(n_{1} - 1)S_{1}^{2} + (n_{2} - 1)S_{2}^{2}}{n_{1} + n_{2} - 2}
+$$
+
+### Equation 2: Observed T Statistic (pooled variance):
+$$
+t_{obs} = \frac{\mu_{1} - \mu_{2}}{S_{p}\sqrt{\frac{1}{n_{1}}+\frac{1}{n_{2}}}}
+$$
+
+### Equation 3: Observed T Statistic (distinct variance):
+$$
+t_{obs} = \frac{\mu_{1} - \mu_{2}}{\sqrt{\frac{S_{1}^{2}}{n_{1}}+\frac{S_{2}^{2}}{n_{2}}}}
+$$
+
+### Equation 4: Satterthwaite Approximation:
+
+$$
+\nu = \frac{ \left( \frac{ S_{1}^{2}}{n_{1} } + \frac{ S_{2}^{2}}{n_{2} } \right)^{2} }
+           { \frac { \left( \frac{ S_{1}^{2}}{n_{1}} \right)^{2} } { n_{1} -1 } + \frac{ \left( \frac{ S_{2}^{2}}{n_{2}} \right)^{2} } { n_{2} -1 } }
+$$
+\endgroup
+
+\newpage
+
+## Appendix II: Part I Results
+
+Data Mean: `r mean(df_data$sysBP)`  
+Data Sample Variance: `r sample_variance(df_data$sysBP)`  
+
+Smoker Mean: `r mu_smoker`  
+Smoker Variance: `r var_smoker`  
+
+Nonsmoker Mean: `r mu_nonsmoker`  
+Nonsmoker Variance: `r var_nonsmoker`  
+
+Difference in mean: `r diff_mu`  
+
+Pooled Sample Variance: `r p_sample_var_1`  
+Nonpooled Sample Variance: `r np_sample_var_2`
+
+CI Pooled: `r CI_pooled`  
+CI Nonpooled: `r CI_nonpooled`
+
+\newpage
+
+## Appendix III: Part II Results
+
+```{r, echo = FALSE}
+knitr::kable(df_combo2, col.names = c("Test Case", 
+                                      "$\\mu_1$", 
+                                      "$\\sigma_1^2$", 
+                                      "$n_1$", 
+                                      "$\\mu_2$", 
+                                      "$\\sigma_2^2$", 
+                                      "$n_2$",
+                                      "Test Results Unpooled",
+                                      "Test Results Pooled",
+                                      "Difference in Mean"), 
+             escape = FALSE)
+```
+
+\newpage
+
+## Appendix IV: Code
+```{r, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
+```
+
